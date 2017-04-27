@@ -7854,6 +7854,30 @@ qemuDomainBuildNamespace(virQEMUDriverConfigPtr cfg,
     if (qemuDomainSetupDev(cfg, mgr, vm, devPath) < 0)
         goto cleanup;
 
+    if (qemuDomainSetupAllDisks(cfg, vm, devPath) < 0)
+        goto cleanup;
+
+    if (qemuDomainSetupAllHostdevs(cfg, vm, devPath) < 0)
+        goto cleanup;
+
+    if (qemuDomainSetupAllMemories(cfg, vm, devPath) < 0)
+        goto cleanup;
+
+    if (qemuDomainSetupAllChardevs(cfg, vm, devPath) < 0)
+        goto cleanup;
+
+    if (qemuDomainSetupTPM(cfg, vm, devPath) < 0)
+        goto cleanup;
+
+    if (qemuDomainSetupAllGraphics(cfg, vm, devPath) < 0)
+        goto cleanup;
+
+    if (qemuDomainSetupAllInputs(cfg, vm, devPath) < 0)
+        goto cleanup;
+
+    if (qemuDomainSetupAllRNGs(cfg, vm, devPath) < 0)
+        goto cleanup;
+
     /* Save some mount points because we want to share them with the host */
     for (i = 0; i < ndevMountsPath; i++) {
         struct stat sb;
@@ -7880,30 +7904,6 @@ qemuDomainBuildNamespace(virQEMUDriverConfigPtr cfg,
         if (virFileMoveMount(devMountsPath[i], devMountsSavePath[i]) < 0)
             goto cleanup;
     }
-
-    if (qemuDomainSetupAllDisks(cfg, vm, devPath) < 0)
-        goto cleanup;
-
-    if (qemuDomainSetupAllHostdevs(cfg, vm, devPath) < 0)
-        goto cleanup;
-
-    if (qemuDomainSetupAllMemories(cfg, vm, devPath) < 0)
-        goto cleanup;
-
-    if (qemuDomainSetupAllChardevs(cfg, vm, devPath) < 0)
-        goto cleanup;
-
-    if (qemuDomainSetupTPM(cfg, vm, devPath) < 0)
-        goto cleanup;
-
-    if (qemuDomainSetupAllGraphics(cfg, vm, devPath) < 0)
-        goto cleanup;
-
-    if (qemuDomainSetupAllInputs(cfg, vm, devPath) < 0)
-        goto cleanup;
-
-    if (qemuDomainSetupAllRNGs(cfg, vm, devPath) < 0)
-        goto cleanup;
 
     if (virFileMoveMount(devPath, "/dev") < 0)
         goto cleanup;
