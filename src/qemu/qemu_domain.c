@@ -25,6 +25,7 @@
 
 #include "qemu_domain.h"
 #include "qemu_alias.h"
+#include "qemu_block.h"
 #include "qemu_cgroup.h"
 #include "qemu_command.h"
 #include "qemu_process.h"
@@ -3300,6 +3301,29 @@ qemuDomainRedirdevDefValidate(const virDomainRedirdevDef *def)
 
 
 static int
+qemuDomainDeviceDefValidateDisk(const virDomainDiskDef *disk)
+{
+    if (disk->src->shared && !disk->src->readonly) {
+        if (disk->src->format <= VIR_STORAGE_FILE_AUTO) {
+            virReportError(VIR_ERR_CONFIG_UNSUPPORTED,
+                           _("shared access for disk '%s' requires use of "
+                             "explicitly specified disk format"), disk->dst);
+            return -1;
+        }
+
+        if (!qemuBlockStorageSourceSupportsConcurrentAccess(disk->src)) {
+            virReportError(VIR_ERR_CONFIG_UNSUPPORTED,
+                           _("shared access for disk '%s' requires use of "
+                             "supported storage format"), disk->dst);
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+
+static int
 qemuDomainDeviceDefValidate(const virDomainDeviceDef *dev,
                             const virDomainDef *def ATTRIBUTE_UNUSED,
                             void *opaque)
@@ -3308,7 +3332,10 @@ qemuDomainDeviceDefValidate(const virDomainDeviceDef *dev,
     virQEMUDriverConfigPtr cfg = virQEMUDriverGetConfig(driver);
     int ret = -1;
 
-    if (dev->type == VIR_DOMAIN_DEVICE_NET) {
+    if (dev->type == VIR_DOMAIN_DEVICE_DISK) {
+        if (qemuDomainDeviceDefValidateDisk(dev->data.disk) < 0)
+            goto cleanup;
+    } else if (dev->type == VIR_DOMAIN_DEVICE_NET) {
         const virDomainNetDef *net = dev->data.net;
 
         if (net->guestIP.nroutes || net->guestIP.nips) {
