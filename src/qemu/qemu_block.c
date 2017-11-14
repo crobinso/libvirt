@@ -380,6 +380,21 @@ qemuBlockGetNodeData(virJSONValuePtr data)
 
 
 /**
+ * qemuBlockStorageSourceSupportsConcurrentAccess:
+ * @src: disk storage source
+ *
+ * Returns true if the given storage format supports concurrent access from two
+ * separate processes.
+ */
+bool
+qemuBlockStorageSourceSupportsConcurrentAccess(virStorageSourcePtr src)
+{
+    /* no need to check in backing chain since only RAW storage supports this */
+    return src->format == VIR_STORAGE_FILE_RAW;
+}
+
+
+/**
  * qemuBlockStorageSourceBuildHostsJSONSocketAddress:
  * @src: disk storage source
  * @legacy: use 'tcp' instead of 'inet' for compatibility reasons

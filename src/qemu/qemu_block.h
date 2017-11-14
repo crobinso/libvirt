@@ -53,6 +53,9 @@ qemuBlockNodeNamesDetect(virQEMUDriverPtr driver,
 virHashTablePtr
 qemuBlockGetNodeData(virJSONValuePtr data);
 
+bool
+qemuBlockStorageSourceSupportsConcurrentAccess(virStorageSourcePtr src);
+
 virJSONValuePtr
 qemuBlockStorageSourceGetBackendProps(virStorageSourcePtr src);
 
