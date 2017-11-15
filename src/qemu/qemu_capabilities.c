@@ -439,6 +439,16 @@ VIR_ENUM_IMPL(virQEMUCaps, QEMU_CAPS_LAST,
               "virtio-net.tx_queue_size",
               "chardev-reconnect",
               "virtio-gpu.max_outputs",
+
+              /* 270 */
+              "vxhs",
+              "virtio-blk.num-queues",
+              "machine.pseries.resize-hpt",
+              "vmcoreinfo",
+              "spapr-vty",
+
+              /* 275 */
+              "disk-share-rw",
     );
 
 
@@ -1702,6 +1712,7 @@ static struct virQEMUCapsStringFlags virQEMUCapsObjectPropsVirtioBlk[] = {
     { "event_idx", QEMU_CAPS_VIRTIO_BLK_EVENT_IDX },
     { "scsi", QEMU_CAPS_VIRTIO_BLK_SCSI },
     { "logical_block_size", QEMU_CAPS_BLOCKIO },
+    { "share-rw", QEMU_CAPS_DISK_SHARE_RW },
 };
 
 static struct virQEMUCapsStringFlags virQEMUCapsObjectPropsVirtioNet[] = {
@@ -1732,10 +1743,12 @@ static struct virQEMUCapsStringFlags virQEMUCapsObjectPropsVfioPCI[] = {
 static struct virQEMUCapsStringFlags virQEMUCapsObjectPropsSCSIDisk[] = {
     { "channel", QEMU_CAPS_SCSI_DISK_CHANNEL },
     { "wwn", QEMU_CAPS_SCSI_DISK_WWN },
+    { "share-rw", QEMU_CAPS_DISK_SHARE_RW },
 };
 
 static struct virQEMUCapsStringFlags virQEMUCapsObjectPropsIDEDrive[] = {
     { "wwn", QEMU_CAPS_IDE_DRIVE_WWN },
+    { "share-rw", QEMU_CAPS_DISK_SHARE_RW },
 };
 
 static struct virQEMUCapsStringFlags virQEMUCapsObjectPropsPiix4PM[] = {
@@ -1766,6 +1779,7 @@ static struct virQEMUCapsStringFlags virQEMUCapsObjectPropsQ35PCIHost[] = {
 
 static struct virQEMUCapsStringFlags virQEMUCapsObjectPropsUSBStorage[] = {
     { "removable", QEMU_CAPS_USB_STORAGE_REMOVABLE },
+    { "share-rw", QEMU_CAPS_DISK_SHARE_RW },
 };
 
 static struct virQEMUCapsStringFlags virQEMUCapsObjectPropsKVMPit[] = {

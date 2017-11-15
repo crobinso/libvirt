@@ -426,6 +426,16 @@ typedef enum {
     QEMU_CAPS_CHARDEV_RECONNECT, /* -chardev reconnect */
     QEMU_CAPS_VIRTIO_GPU_MAX_OUTPUTS, /* -device virtio-(vga|gpu-*),max-outputs= */
 
+    /* 270 */
+    QEMU_CAPS_VXHS, /* -drive file.driver=vxhs via query-qmp-schema */
+    QEMU_CAPS_VIRTIO_BLK_NUM_QUEUES, /* virtio-blk-*.num-queues */
+    QEMU_CAPS_MACHINE_PSERIES_RESIZE_HPT, /* -machine pseries,resize-hpt */
+    QEMU_CAPS_DEVICE_VMCOREINFO, /* -device vmcoreinfo */
+    QEMU_CAPS_DEVICE_SPAPR_VTY, /* -device spapr-vty */
+
+    /* 275 */
+    QEMU_CAPS_DISK_SHARE_RW, /* share-rw=on for concurrent disk access */
+
     QEMU_CAPS_LAST /* this must always be the last item */
 } virQEMUCapsFlags;
 
