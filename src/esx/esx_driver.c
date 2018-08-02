@@ -3422,7 +3422,10 @@ esxDomainSetAutostart(virDomainPtr domain, int autostart)
     if (esxVI_AutoStartPowerInfo_Alloc(&newPowerInfo) < 0 ||
         esxVI_Int_Alloc(&newPowerInfo->startOrder) < 0 ||
         esxVI_Int_Alloc(&newPowerInfo->startDelay) < 0 ||
-        esxVI_Int_Alloc(&newPowerInfo->stopDelay) < 0) {
+        esxVI_Int_Alloc(&newPowerInfo->stopDelay) < 0 ||
+        esxVI_AutoStartPowerInfo_AppendToList(&spec->powerInfo,
+                                              newPowerInfo) < 0) {
+        esxVI_AutoStartPowerInfo_Free(&newPowerInfo);
         goto cleanup;
     }
 
@@ -3433,13 +3436,6 @@ esxDomainSetAutostart(virDomainPtr domain, int autostart)
     newPowerInfo->startAction = autostart ? (char *)"powerOn" : (char *)"none";
     newPowerInfo->stopDelay->value = -1; /* use system default */
     newPowerInfo->stopAction = (char *)"none";
-
-    if (esxVI_AutoStartPowerInfo_AppendToList(&spec->powerInfo,
-                                              newPowerInfo) < 0) {
-        goto cleanup;
-    }
-
-    newPowerInfo = NULL;
 
     if (esxVI_ReconfigureAutostart
           (priv->primary,
@@ -3461,8 +3457,6 @@ esxDomainSetAutostart(virDomainPtr domain, int autostart)
     esxVI_HostAutoStartManagerConfig_Free(&spec);
     esxVI_AutoStartDefaults_Free(&defaults);
     esxVI_AutoStartPowerInfo_Free(&powerInfoList);
-
-    esxVI_AutoStartPowerInfo_Free(&newPowerInfo);
 
     return result;
 }
