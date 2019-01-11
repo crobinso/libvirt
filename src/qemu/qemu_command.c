@@ -443,6 +443,33 @@ qemuBuildVirtioDevStr(virBufferPtr buf,
     return 0;
 }
 
+static int
+qemuBuildVirtioTransitional(virBufferPtr buf,
+                            const char *baseName,
+                            virDomainDeviceAddressType type,
+                            bool transitional,
+                            bool nontransitional)
+{
+    if (qemuBuildVirtioDevStr(buf, baseName, type) < 0)
+        return -1;
+
+    if (type != VIR_DOMAIN_DEVICE_ADDRESS_TYPE_PCI &&
+        (transitional || nontransitional)) {
+        virReportError(VIR_ERR_CONFIG_UNSUPPORTED,
+                       _("virtio transitional models are not supported "
+                         "for address type=%s"),
+                       virDomainDeviceAddressTypeToString(type));
+        return -1;
+    }
+
+    if (transitional) {
+        virBufferAddLit(buf, "-transitional");
+    } else if (nontransitional) {
+        virBufferAddLit(buf, "-non-transitional");
+    }
+    return 0;
+}
+
 
 static int
 qemuBuildVirtioOptionsStr(virBufferPtr buf,
@@ -2049,7 +2076,9 @@ qemuBuildDiskDeviceStr(const virDomainDef *def,
         break;
 
     case VIR_DOMAIN_DISK_BUS_VIRTIO:
-        if (qemuBuildVirtioDevStr(&opt, "virtio-blk", disk->info.type) < 0)
+        if (qemuBuildVirtioTransitional(&opt, "virtio-blk", disk->info.type,
+                                        disk->model == VIR_DOMAIN_DISK_MODEL_VIRTIO_TRANSITIONAL,
+                                        disk->model == VIR_DOMAIN_DISK_MODEL_VIRTIO_NON_TRANSITIONAL) < 0)
             goto error;
 
         if (disk->iothread)
