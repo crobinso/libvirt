@@ -38,6 +38,7 @@
         <value>scsi</value>
         <value>virtio</value>
       </enum>
+      <enum name='model'/>
     </disk>
     <graphics supported='yes'>
       <enum name='type'>

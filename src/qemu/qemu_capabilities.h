@@ -504,6 +504,8 @@ typedef enum { /* virQEMUCapsFlags grouping marker for syntax-check */
     /* 325 */
     QEMU_CAPS_OBJECT_MEMORY_FILE_PMEM, /* -object memory-backend-file,pmem= */
     QEMU_CAPS_DEVICE_NVDIMM_UNARMED, /* -device nvdimm,unarmed= */
+    QEMU_CAPS_DEVICE_VIRTIO_BLK_TRANSITIONAL, /* -device virtio-blk-pci-transitional */
+    QEMU_CAPS_DEVICE_VIRTIO_BLK_NON_TRANSITIONAL, /* -device virtio-blk-pci-non-transitional */
 
     QEMU_CAPS_LAST /* this must always be the last item */
 } virQEMUCapsFlags;

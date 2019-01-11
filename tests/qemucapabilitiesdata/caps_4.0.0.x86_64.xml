@@ -212,6 +212,8 @@
   <flag name='memory-backend-file.align'/>
   <flag name='memory-backend-file.pmem'/>
   <flag name='nvdimm.unarmed'/>
+  <flag name='virtio-blk-pci-transitional'/>
+  <flag name='virtio-blk-pci-non-transitional'/>
   <version>3001050</version>
   <kvmVersion>0</kvmVersion>
   <microcodeVersion>446361</microcodeVersion>

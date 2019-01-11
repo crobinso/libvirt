@@ -520,6 +520,8 @@ VIR_ENUM_IMPL(virQEMUCaps, QEMU_CAPS_LAST,
               /* 325 */
               "memory-backend-file.pmem",
               "nvdimm.unarmed",
+              "virtio-blk-pci-transitional",
+              "virtio-blk-pci-non-transitional",
     );
 
 
@@ -1108,6 +1110,8 @@ struct virQEMUCapsStringFlags virQEMUCapsObjectTypes[] = {
     { "vfio-ap", QEMU_CAPS_DEVICE_VFIO_AP },
     { "zpci", QEMU_CAPS_DEVICE_ZPCI },
     { "memory-backend-memfd", QEMU_CAPS_OBJECT_MEMORY_MEMFD },
+    {"virtio-blk-pci-transitional", QEMU_CAPS_DEVICE_VIRTIO_BLK_TRANSITIONAL},
+    {"virtio-blk-pci-non-transitional", QEMU_CAPS_DEVICE_VIRTIO_BLK_NON_TRANSITIONAL},
 };
 
 static struct virQEMUCapsStringFlags virQEMUCapsDevicePropsVirtioBalloon[] = {
@@ -5237,6 +5241,13 @@ virQEMUCapsFillDomainDeviceDiskCaps(virQEMUCapsPtr qemuCaps,
 
     if (virQEMUCapsGet(qemuCaps, QEMU_CAPS_ICH9_AHCI))
         VIR_DOMAIN_CAPS_ENUM_SET(disk->bus, VIR_DOMAIN_DISK_BUS_SATA);
+
+    if (virQEMUCapsGet(qemuCaps, QEMU_CAPS_DEVICE_VIRTIO_BLK_TRANSITIONAL))
+        VIR_DOMAIN_CAPS_ENUM_SET(disk->model,
+                                 VIR_DOMAIN_DISK_MODEL_VIRTIO_TRANSITIONAL);
+    if (virQEMUCapsGet(qemuCaps, QEMU_CAPS_DEVICE_VIRTIO_BLK_NON_TRANSITIONAL))
+        VIR_DOMAIN_CAPS_ENUM_SET(disk->model,
+                                 VIR_DOMAIN_DISK_MODEL_VIRTIO_NON_TRANSITIONAL);
 
     return 0;
 }

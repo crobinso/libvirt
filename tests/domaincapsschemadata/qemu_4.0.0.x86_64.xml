@@ -1,7 +1,7 @@
 <domainCapabilities>
   <path>/usr/bin/qemu-system-x86_64</path>
   <domain>kvm</domain>
-  <machine>pc-i440fx-2.8</machine>
+  <machine>pc-i440fx-4.0</machine>
   <arch>x86_64</arch>
   <vcpu max='255'/>
   <iothreads supported='yes'/>
@@ -23,7 +23,19 @@
   <cpu>
     <mode name='host-passthrough' supported='yes'/>
     <mode name='host-model' supported='yes'>
-      <model fallback='allow'>Broadwell</model>
+      <model fallback='forbid'>Skylake-Client-IBRS</model>
+      <vendor>Intel</vendor>
+      <feature policy='require' name='ss'/>
+      <feature policy='require' name='vmx'/>
+      <feature policy='require' name='hypervisor'/>
+      <feature policy='require' name='tsc_adjust'/>
+      <feature policy='require' name='clflushopt'/>
+      <feature policy='require' name='umip'/>
+      <feature policy='require' name='arch-capabilities'/>
+      <feature policy='require' name='ssbd'/>
+      <feature policy='require' name='xsaves'/>
+      <feature policy='require' name='pdpe1gb'/>
+      <feature policy='require' name='invtsc'/>
     </mode>
     <mode name='custom' supported='yes'>
       <model usable='yes'>qemu64</model>
@@ -38,8 +50,13 @@
       <model usable='yes'>coreduo</model>
       <model usable='yes'>core2duo</model>
       <model usable='no'>athlon</model>
+      <model usable='yes'>Westmere-IBRS</model>
       <model usable='yes'>Westmere</model>
+      <model usable='no'>Skylake-Server-IBRS</model>
+      <model usable='no'>Skylake-Server</model>
+      <model usable='yes'>Skylake-Client-IBRS</model>
       <model usable='yes'>Skylake-Client</model>
+      <model usable='yes'>SandyBridge-IBRS</model>
       <model usable='yes'>SandyBridge</model>
       <model usable='yes'>Penryn</model>
       <model usable='no'>Opteron_G5</model>
@@ -47,13 +64,23 @@
       <model usable='no'>Opteron_G3</model>
       <model usable='yes'>Opteron_G2</model>
       <model usable='yes'>Opteron_G1</model>
+      <model usable='yes'>Nehalem-IBRS</model>
       <model usable='yes'>Nehalem</model>
+      <model usable='yes'>IvyBridge-IBRS</model>
       <model usable='yes'>IvyBridge</model>
-      <model usable='yes'>Haswell</model>
+      <model usable='no'>Icelake-Server</model>
+      <model usable='no'>Icelake-Client</model>
+      <model usable='yes'>Haswell-noTSX-IBRS</model>
       <model usable='yes'>Haswell-noTSX</model>
+      <model usable='yes'>Haswell-IBRS</model>
+      <model usable='yes'>Haswell</model>
+      <model usable='no'>EPYC-IBPB</model>
+      <model usable='no'>EPYC</model>
       <model usable='yes'>Conroe</model>
-      <model usable='yes'>Broadwell</model>
+      <model usable='yes'>Broadwell-noTSX-IBRS</model>
       <model usable='yes'>Broadwell-noTSX</model>
+      <model usable='yes'>Broadwell-IBRS</model>
+      <model usable='yes'>Broadwell</model>
       <model usable='yes'>486</model>
     </mode>
   </cpu>
@@ -73,7 +100,10 @@
         <value>usb</value>
         <value>sata</value>
       </enum>
-      <enum name='model'/>
+      <enum name='model'>
+        <value>virtio-transitional</value>
+        <value>virtio-non-transitional</value>
+      </enum>
     </disk>
     <graphics supported='yes'>
       <enum name='type'>
@@ -116,8 +146,8 @@
   </devices>
   <features>
     <gic supported='no'/>
-    <vmcoreinfo supported='no'/>
-    <genid supported='no'/>
+    <vmcoreinfo supported='yes'/>
+    <genid supported='yes'/>
     <sev supported='no'/>
   </features>
 </domainCapabilities>
