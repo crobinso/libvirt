@@ -2922,6 +2922,14 @@
             <span class="since">Since 0.1.4</span>
             </p>
             </dd>
+          <dt><code>model</code></dt>
+            <dd>
+            Indicates the emulated device model of the disk. Typically
+            this is indicated solely by the <code>bus</code> property but
+            for <code>bus</code> "virtio" the model can be specified further
+            with "virtio-transitional" or "virtio-non-transitional"
+            <span class="since">Since 5.1.0</span>
+            </dd>
           <dt><code>rawio</code></dt>
             <dd>
             Indicates whether the disk needs rawio capability. Valid

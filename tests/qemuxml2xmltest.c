@@ -1292,6 +1292,9 @@ mymain(void)
     DO_TEST("riscv64-virt",
             QEMU_CAPS_DEVICE_VIRTIO_MMIO);
 
+    DO_TEST_CAPS("virtio-transitional", "x86_64", "4.0.0");
+    DO_TEST_CAPS("virtio-non-transitional", "x86_64", "4.0.0");
+
     if (getenv("LIBVIRT_SKIP_CLEANUP") == NULL)
         virFileDeleteTree(fakerootdir);
 
