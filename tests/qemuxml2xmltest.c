@@ -117,10 +117,10 @@ testInfoClear(struct testInfo *info)
 
 static int
 testInfoSetCommon(struct testInfo *info,
-                  int gic)
+                  int gic,
+                  virQEMUCapsPtr qemuCaps)
 {
-    if (!(info->qemuCaps = virQEMUCapsNew()))
-        goto error;
+    info->qemuCaps = qemuCaps;
 
     if (testQemuCapsSetGIC(info->qemuCaps, gic) < 0)
         goto error;
@@ -140,9 +140,10 @@ static int
 testInfoSet(struct testInfo *info,
             const char *name,
             int when,
-            int gic)
+            int gic,
+            virQEMUCapsPtr qemuCaps)
 {
-    if (testInfoSetCommon(info, gic) < 0)
+    if (testInfoSetCommon(info, gic, qemuCaps) < 0)
         return -1;
 
     if (virAsprintf(&info->inName, "%s/qemuxml2argvdata/%s.xml",
@@ -194,9 +195,10 @@ static const char *statusPath = abs_srcdir "/qemustatusxml2xmldata/";
 static int
 testInfoSetStatus(struct testInfo *info,
                   const char *name,
-                  int gic)
+                  int gic,
+                  virQEMUCapsPtr qemuCaps)
 {
-    if (testInfoSetCommon(info, gic) < 0)
+    if (testInfoSetCommon(info, gic, qemuCaps) < 0)
         return -1;
 
     if (virAsprintf(&info->inName, "%s%s-in.xml", statusPath, name) < 0 ||
@@ -220,6 +222,7 @@ mymain(void)
     char *fakerootdir;
     struct testInfo info;
     virQEMUDriverConfigPtr cfg = NULL;
+    virQEMUCapsPtr qemuCaps = NULL;
 
     if (VIR_STRDUP_QUIET(fakerootdir, FAKEROOTDIRTEMPLATE) < 0) {
         fprintf(stderr, "Out of memory\n");
@@ -240,14 +243,8 @@ mymain(void)
 
     cfg = virQEMUDriverGetConfig(&driver);
 
-# define DO_TEST_FULL(name, when, gic, ...) \
+# define DO_TEST_RUN(name, info) \
     do { \
-        if (testInfoSet(&info, name, when, gic) < 0) { \
-            VIR_TEST_DEBUG("Failed to generate test data for '%s'", name); \
-            return -1; \
-        } \
-        virQEMUCapsSetList(info.qemuCaps, __VA_ARGS__, QEMU_CAPS_LAST); \
- \
         if (info.outInactiveName) { \
             if (virTestRun("QEMU XML-2-XML-inactive " name, \
                             testXML2XMLInactive, &info) < 0) \
@@ -260,6 +257,34 @@ mymain(void)
                 ret = -1; \
         } \
         testInfoClear(&info); \
+    } while (0)
+
+# define DO_TEST_FULL(name, when, gic, ...) \
+    do { \
+        if (!(qemuCaps = virQEMUCapsNew())) \
+            return -1; \
+        if (testInfoSet(&info, name, when, gic, qemuCaps) < 0) { \
+            VIR_TEST_DEBUG("Failed to generate test data for '%s'", name); \
+            return -1; \
+        } \
+        virQEMUCapsSetList(info.qemuCaps, __VA_ARGS__, QEMU_CAPS_LAST); \
+        DO_TEST_RUN(name, info); \
+    } while (0)
+
+# define TEST_CAPS_PATH abs_srcdir "/qemucapabilitiesdata/caps_"
+
+# define DO_TEST_CAPS(name, arch, ver) \
+    do { \
+        if (!(qemuCaps = qemuTestParseCapabilitiesArch(virArchFromString(arch), \
+                                                       TEST_CAPS_PATH ver "." arch ".xml"))) { \
+            printf("bad\n"); \
+            return -1; \
+        } \
+        if (testInfoSet(&info, name, WHEN_BOTH, GIC_NONE, qemuCaps) < 0) { \
+            VIR_TEST_DEBUG("Failed to generate test data for '%s'", name); \
+            return -1; \
+        } \
+        DO_TEST_RUN(name, info); \
     } while (0)
 
 # define NONE QEMU_CAPS_LAST
@@ -1233,7 +1258,9 @@ mymain(void)
 
 # define DO_TEST_STATUS(name) \
     do { \
-        if (testInfoSetStatus(&info, name, GIC_NONE) < 0) { \
+        if (!(qemuCaps = virQEMUCapsNew())) \
+            return -1; \
+        if (testInfoSetStatus(&info, name, GIC_NONE, qemuCaps) < 0) { \
             VIR_TEST_DEBUG("Failed to generate status test data for '%s'", name); \
             return -1; \
         } \
