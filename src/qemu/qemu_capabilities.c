@@ -522,6 +522,10 @@ VIR_ENUM_IMPL(virQEMUCaps, QEMU_CAPS_LAST,
               "nvdimm.unarmed",
               "virtio-blk-pci-transitional",
               "virtio-blk-pci-non-transitional",
+              "virtio-rng-pci-transitional",
+
+              /* 330 */
+              "virtio-rng-pci-non-transitional",
     );
 
 
@@ -1112,6 +1116,8 @@ struct virQEMUCapsStringFlags virQEMUCapsObjectTypes[] = {
     { "memory-backend-memfd", QEMU_CAPS_OBJECT_MEMORY_MEMFD },
     {"virtio-blk-pci-transitional", QEMU_CAPS_DEVICE_VIRTIO_BLK_TRANSITIONAL},
     {"virtio-blk-pci-non-transitional", QEMU_CAPS_DEVICE_VIRTIO_BLK_NON_TRANSITIONAL},
+    {"virtio-rng-pci-transitional", QEMU_CAPS_DEVICE_VIRTIO_RNG_TRANSITIONAL},
+    {"virtio-rng-pci-non-transitional", QEMU_CAPS_DEVICE_VIRTIO_RNG_NON_TRANSITIONAL},
 };
 
 static struct virQEMUCapsStringFlags virQEMUCapsDevicePropsVirtioBalloon[] = {

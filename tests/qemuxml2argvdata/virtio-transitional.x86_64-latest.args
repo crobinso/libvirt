@@ -30,6 +30,8 @@ addr=0x1 \
 -drive file=/dev/HostVG/QEMUGuest1,format=raw,if=none,id=drive-virtio-disk0 \
 -device virtio-blk-pci-transitional,scsi=off,bus=pci.2,addr=0x1,\
 drive=drive-virtio-disk0,id=virtio-disk0,bootindex=1 \
+-object rng-random,id=objrng0,filename=/dev/urandom \
+-device virtio-rng-pci-transitional,rng=objrng0,id=rng0,bus=pci.2,addr=0x2 \
 -sandbox on,obsolete=deny,elevateprivileges=deny,spawn=deny,\
 resourcecontrol=deny \
 -msg timestamp=on

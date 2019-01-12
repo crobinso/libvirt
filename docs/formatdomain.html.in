@@ -7966,6 +7966,8 @@ qemu-kvm -net nic,model=? /dev/null
         </p>
         <ul>
           <li>'virtio' - supported by qemu and virtio-rng kernel module</li>
+          <li>'virtio-transitional' <span class='since'>Since 5.1.0</span></li>
+          <li>'virtio-non-transitional' <span class='since'>Since 5.1.0</span></li>
         </ul>
       </dd>
       <dt><code>rate</code></dt>

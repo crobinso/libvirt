@@ -5916,8 +5916,12 @@ qemuBuildRNGDevStr(const virDomainDef *def,
 {
     virBuffer buf = VIR_BUFFER_INITIALIZER;
 
-    if (dev->model != VIR_DOMAIN_RNG_MODEL_VIRTIO ||
-        !virQEMUCapsGet(qemuCaps, QEMU_CAPS_DEVICE_VIRTIO_RNG)) {
+    if (!((dev->model == VIR_DOMAIN_RNG_MODEL_VIRTIO &&
+           virQEMUCapsGet(qemuCaps, QEMU_CAPS_DEVICE_VIRTIO_RNG)) ||
+          (dev->model == VIR_DOMAIN_RNG_MODEL_VIRTIO_TRANSITIONAL &&
+           virQEMUCapsGet(qemuCaps, QEMU_CAPS_DEVICE_VIRTIO_RNG_TRANSITIONAL)) ||
+          (dev->model == VIR_DOMAIN_RNG_MODEL_VIRTIO_NON_TRANSITIONAL &&
+           virQEMUCapsGet(qemuCaps, QEMU_CAPS_DEVICE_VIRTIO_RNG_NON_TRANSITIONAL)))) {
         virReportError(VIR_ERR_CONFIG_UNSUPPORTED,
                        _("this qemu doesn't support RNG device type '%s'"),
                        virDomainRNGModelTypeToString(dev->model));
@@ -5928,7 +5932,9 @@ qemuBuildRNGDevStr(const virDomainDef *def,
                                               dev->source.file))
         goto error;
 
-    if (qemuBuildVirtioDevStr(&buf, "virtio-rng", dev->info.type) < 0)
+    if (qemuBuildVirtioTransitional(&buf, "virtio-rng", dev->info.type,
+                                    dev->model == VIR_DOMAIN_RNG_MODEL_VIRTIO_TRANSITIONAL,
+                                    dev->model == VIR_DOMAIN_RNG_MODEL_VIRTIO_NON_TRANSITIONAL) < 0)
         goto error;
 
     virBufferAsprintf(&buf, ",rng=obj%s,id=%s",

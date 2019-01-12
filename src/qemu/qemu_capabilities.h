@@ -506,6 +506,10 @@ typedef enum { /* virQEMUCapsFlags grouping marker for syntax-check */
     QEMU_CAPS_DEVICE_NVDIMM_UNARMED, /* -device nvdimm,unarmed= */
     QEMU_CAPS_DEVICE_VIRTIO_BLK_TRANSITIONAL, /* -device virtio-blk-pci-transitional */
     QEMU_CAPS_DEVICE_VIRTIO_BLK_NON_TRANSITIONAL, /* -device virtio-blk-pci-non-transitional */
+    QEMU_CAPS_DEVICE_VIRTIO_RNG_TRANSITIONAL, /* -device virtio-blk-rng-transitional */
+
+    /* 330 */
+    QEMU_CAPS_DEVICE_VIRTIO_RNG_NON_TRANSITIONAL, /* -device virtio-rng-pci-non-transitional */
 
     QEMU_CAPS_LAST /* this must always be the last item */
 } virQEMUCapsFlags;

@@ -19,6 +19,9 @@
       <target dev='vda' bus='virtio'/>
     </disk>
     <controller type='usb' index='0' model='none'/>
+    <rng model='virtio-non-transitional'>
+      <backend model='random'>/dev/urandom</backend>
+    </rng>
     <input type='mouse' bus='ps2'/>
     <input type='keyboard' bus='ps2'/>
     <memballoon model='none'/>

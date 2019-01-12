@@ -214,6 +214,8 @@
   <flag name='nvdimm.unarmed'/>
   <flag name='virtio-blk-pci-transitional'/>
   <flag name='virtio-blk-pci-non-transitional'/>
+  <flag name='virtio-rng-pci-transitional'/>
+  <flag name='virtio-rng-pci-non-transitional'/>
   <version>3001050</version>
   <kvmVersion>0</kvmVersion>
   <microcodeVersion>446361</microcodeVersion>
