@@ -780,6 +780,14 @@ VIR_ENUM_IMPL(virDomainHostdevSubsysSCSIHostProtocol,
               "vhost",
 );
 
+VIR_ENUM_IMPL(virDomainHostdevSubsysSCSIVHostModel,
+              VIR_DOMAIN_HOSTDEV_SUBSYS_SCSI_VHOST_MODEL_TYPE_LAST,
+              "default",
+              "virtio",
+              "virtio-transitional",
+              "virtio-non-transitional",
+);
+
 VIR_ENUM_IMPL(virDomainHostdevCaps, VIR_DOMAIN_HOSTDEV_CAPS_TYPE_LAST,
               "storage",
               "misc",
@@ -7889,6 +7897,7 @@ virDomainHostdevDefParseXMLSubsys(xmlNodePtr node,
     int ret = -1;
     virDomainHostdevSubsysPCIPtr pcisrc = &def->source.subsys.u.pci;
     virDomainHostdevSubsysSCSIPtr scsisrc = &def->source.subsys.u.scsi;
+    virDomainHostdevSubsysSCSIVHostPtr scsihostsrc = &def->source.subsys.u.scsi_host;
     virDomainHostdevSubsysMediatedDevPtr mdevsrc = &def->source.subsys.u.mdev;
 
     /* @managed can be read from the xml document - it is always an
@@ -7971,14 +7980,26 @@ virDomainHostdevDefParseXMLSubsys(xmlNodePtr node,
         }
     }
 
-    if (def->source.subsys.type != VIR_DOMAIN_HOSTDEV_SUBSYS_TYPE_MDEV) {
+    if (def->source.subsys.type != VIR_DOMAIN_HOSTDEV_SUBSYS_TYPE_MDEV &&
+        def->source.subsys.type != VIR_DOMAIN_HOSTDEV_SUBSYS_TYPE_SCSI_HOST) {
         if (model) {
-            virReportError(VIR_ERR_XML_ERROR, "%s",
-                           _("'model' attribute in <hostdev> is only supported "
-                             "when type='mdev'"));
+            virReportError(VIR_ERR_XML_ERROR,
+                           _("'model' attribute in <hostdev> is not supported "
+                             "for type='%s'"),
+                           virDomainHostdevSubsysTypeToString(def->source.subsys.type));
             goto cleanup;
         }
-    } else {
+    }
+
+    if (def->source.subsys.type == VIR_DOMAIN_HOSTDEV_SUBSYS_TYPE_SCSI_HOST) {
+        if (model &&
+            ((scsihostsrc->model = virDomainHostdevSubsysSCSIVHostModelTypeFromString(model)) < 0)) {
+            virReportError(VIR_ERR_XML_ERROR,
+                           _("unknown hostdev model '%s'"),
+                           model);
+            goto cleanup;
+        }
+    } else if (def->source.subsys.type == VIR_DOMAIN_HOSTDEV_SUBSYS_TYPE_MDEV) {
         if (!model) {
             virReportError(VIR_ERR_XML_ERROR, "%s",
                            _("Missing 'model' attribute in mediated device's "
@@ -27386,6 +27407,7 @@ virDomainHostdevDefFormat(virBufferPtr buf,
     const char *mode = virDomainHostdevModeTypeToString(def->mode);
     virDomainHostdevSubsysSCSIPtr scsisrc = &def->source.subsys.u.scsi;
     virDomainHostdevSubsysMediatedDevPtr mdevsrc = &def->source.subsys.u.mdev;
+    virDomainHostdevSubsysSCSIVHostPtr scsihostsrc = &def->source.subsys.u.scsi_host;
     const char *type;
 
     if (!mode) {
@@ -27434,6 +27456,12 @@ virDomainHostdevDefFormat(virBufferPtr buf,
             scsisrc->rawio) {
             virBufferAsprintf(buf, " rawio='%s'",
                               virTristateBoolTypeToString(scsisrc->rawio));
+        }
+
+        if (def->source.subsys.type == VIR_DOMAIN_HOSTDEV_SUBSYS_TYPE_SCSI_HOST &&
+            scsihostsrc->model) {
+            virBufferAsprintf(buf, " model='%s'",
+                              virDomainHostdevSubsysSCSIVHostModelTypeToString(scsihostsrc->model));
         }
 
         if (def->source.subsys.type == VIR_DOMAIN_HOSTDEV_SUBSYS_TYPE_MDEV) {

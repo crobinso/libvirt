@@ -408,6 +408,8 @@ virDomainHostdevInsert;
 virDomainHostdevModeTypeToString;
 virDomainHostdevRemove;
 virDomainHostdevSubsysPCIBackendTypeToString;
+virDomainHostdevSubsysSCSIVHostModelTypeFromString;
+virDomainHostdevSubsysSCSIVHostModelTypeToString;
 virDomainHostdevSubsysTypeToString;
 virDomainHPTResizingTypeToString;
 virDomainHubTypeFromString;
