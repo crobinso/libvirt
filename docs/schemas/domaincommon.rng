@@ -5455,7 +5455,11 @@
   <define name="rng">
     <element name="rng">
       <attribute name="model">
-        <value>virtio</value>
+        <choice>
+          <value>virtio</value>
+          <value>virtio-transitional</value>
+          <value>virtio-non-transitional</value>
+        </choice>
       </attribute>
       <interleave>
         <ref name="rng-backend"/>
