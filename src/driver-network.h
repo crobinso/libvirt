@@ -118,6 +118,40 @@ typedef int
                               virNetworkDHCPLeasePtr **leases,
                               unsigned int flags);
 
+typedef virNetworkPortPtr
+(*virDrvNetworkPortLookupByUUID)(virNetworkPtr net,
+                                 const unsigned char *uuid);
+
+typedef virNetworkPortPtr
+(*virDrvNetworkPortCreateXML)(virNetworkPtr net,
+                              const char *xmldesc,
+                              unsigned int flags);
+
+typedef int
+(*virDrvNetworkPortSetParameters)(virNetworkPortPtr port,
+                                  virTypedParameterPtr params,
+                                  int nparams,
+                                  unsigned int flags);
+
+typedef int
+(*virDrvNetworkPortGetParameters)(virNetworkPortPtr port,
+                                  virTypedParameterPtr *params,
+                                  int *nparams,
+                                  unsigned int flags);
+
+typedef char *
+(*virDrvNetworkPortGetXMLDesc)(virNetworkPortPtr port,
+                               unsigned int flags);
+
+typedef int
+(*virDrvNetworkPortDelete)(virNetworkPortPtr port,
+                           unsigned int flags);
+
+typedef int
+(*virDrvNetworkListAllPorts)(virNetworkPtr network,
+                             virNetworkPortPtr **ports,
+                             unsigned int flags);
+
 typedef struct _virNetworkDriver virNetworkDriver;
 typedef virNetworkDriver *virNetworkDriverPtr;
 
@@ -151,6 +185,13 @@ struct _virNetworkDriver {
     virDrvNetworkIsActive networkIsActive;
     virDrvNetworkIsPersistent networkIsPersistent;
     virDrvNetworkGetDHCPLeases networkGetDHCPLeases;
+    virDrvNetworkPortLookupByUUID networkPortLookupByUUID;
+    virDrvNetworkPortCreateXML networkPortCreateXML;
+    virDrvNetworkPortGetXMLDesc networkPortGetXMLDesc;
+    virDrvNetworkPortSetParameters networkPortSetParameters;
+    virDrvNetworkPortGetParameters networkPortGetParameters;
+    virDrvNetworkPortDelete networkPortDelete;
+    virDrvNetworkListAllPorts networkListAllPorts;
 };
 
 

@@ -322,6 +322,9 @@ typedef enum {
     VIR_ERR_DEVICE_MISSING = 99,        /* fail to find the desired device */
     VIR_ERR_INVALID_NWFILTER_BINDING = 100,  /* invalid nwfilter binding */
     VIR_ERR_NO_NWFILTER_BINDING = 101,  /* no nwfilter binding */
+    VIR_ERR_INVALID_NETWORK_PORT = 102, /* invalid network port object */
+    VIR_ERR_NETWORK_PORT_EXIST = 103,   /* the network port already exist */
+    VIR_ERR_NO_NETWORK_PORT = 104,      /* network port not found */
 
 # ifdef VIR_ENUM_SENTINELS
     VIR_ERR_NUMBER_LAST
