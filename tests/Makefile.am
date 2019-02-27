@@ -148,6 +148,7 @@ EXTRA_DIST = \
 	virmock.h \
 	virnetdaemondata \
 	virnetdevtestdata \
+	virnetworkportxml2xmldata \
 	virnwfilterbindingxml2xmldata \
 	virpcitestdata \
 	virscsidata \
@@ -334,6 +335,7 @@ endif WITH_YAJL
 test_programs += \
 		networkxml2xmltest \
 		networkxml2xmlupdatetest \
+		virnetworkportxml2xmltest \
 		$(NULL)
 
 if WITH_NETWORK
@@ -829,6 +831,11 @@ networkxml2xmlupdatetest_SOURCES = \
 	networkxml2xmlupdatetest.c \
 	testutils.c testutils.h
 networkxml2xmlupdatetest_LDADD = $(LDADDS)
+
+virnetworkportxml2xmltest_SOURCES = \
+	virnetworkportxml2xmltest.c \
+	testutils.c testutils.h
+virnetworkportxml2xmltest_LDADD = $(LDADDS)
 
 if WITH_NETWORK
 networkxml2conftest_SOURCES = \
