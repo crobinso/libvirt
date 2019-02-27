@@ -3542,10 +3542,6 @@ typedef int
                                        virDomainDefPtr dom,
                                        virDomainNetDefPtr iface);
 
-typedef bool
-(*virDomainNetBandwidthChangeAllowedImpl)(virDomainNetDefPtr iface,
-                                          virNetDevBandwidthPtr newBandwidth);
-
 typedef int
 (*virDomainNetBandwidthUpdateImpl)(virDomainNetDefPtr iface,
                                    virNetDevBandwidthPtr newBandwidth);
@@ -3555,7 +3551,6 @@ void
 virDomainNetSetDeviceImpl(virDomainNetAllocateActualDeviceImpl allocate,
                           virDomainNetNotifyActualDeviceImpl notify,
                           virDomainNetReleaseActualDeviceImpl release,
-                          virDomainNetBandwidthChangeAllowedImpl bandwidthChangeAllowed,
                           virDomainNetBandwidthUpdateImpl bandwidthUpdate);
 
 int
@@ -3574,11 +3569,6 @@ int
 virDomainNetReleaseActualDevice(virConnectPtr conn,
                                 virDomainDefPtr dom,
                                 virDomainNetDefPtr iface)
-    ATTRIBUTE_NONNULL(1) ATTRIBUTE_NONNULL(2);
-
-bool
-virDomainNetBandwidthChangeAllowed(virDomainNetDefPtr iface,
-                              virNetDevBandwidthPtr newBandwidth)
     ATTRIBUTE_NONNULL(1) ATTRIBUTE_NONNULL(2);
 
 int

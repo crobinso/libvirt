@@ -455,7 +455,6 @@ virDomainMemorySourceTypeFromString;
 virDomainMemorySourceTypeToString;
 virDomainNetAllocateActualDevice;
 virDomainNetAppendIPAddress;
-virDomainNetBandwidthChangeAllowed;
 virDomainNetBandwidthUpdate;
 virDomainNetDefActualFromNetworkPort;
 virDomainNetDefActualToNetworkPort;
