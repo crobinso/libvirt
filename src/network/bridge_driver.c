@@ -4813,26 +4813,6 @@ networkNotifyActualDevice(virNetworkPtr net,
         goto error;
     }
 
-    /* if we're restarting libvirtd after an upgrade from a version
-     * that didn't save bridge name in actualNetDef for
-     * actualType==network, we need to copy it in so that it will be
-     * available in all cases
-     */
-    if (actualType == VIR_DOMAIN_NET_TYPE_NETWORK &&
-        !iface->data.network.actual->data.bridge.brname &&
-        (VIR_STRDUP(iface->data.network.actual->data.bridge.brname,
-                    netdef->bridge) < 0))
-            goto error;
-
-    /* Older libvirtd uses actualType==network, but we now
-     * just use actualType==bridge, as nothing needs to
-     * distinguish the two cases, and this simplifies virt
-     * drive code */
-    if (actualType == VIR_DOMAIN_NET_TYPE_NETWORK) {
-        iface->data.network.actual->type = VIR_DOMAIN_NET_TYPE_BRIDGE;
-        actualType = VIR_DOMAIN_NET_TYPE_BRIDGE;
-    }
-
     if (!iface->data.network.actual ||
         (actualType != VIR_DOMAIN_NET_TYPE_DIRECT &&
          actualType != VIR_DOMAIN_NET_TYPE_HOSTDEV)) {
