@@ -4724,43 +4724,23 @@ networkAllocateActualDevice(virNetworkPtr net,
 }
 
 
-/* networkNotifyActualDevice:
- * @dom: domain definition that @iface belongs to
- * @iface:  the domain's NetDef with an "actual" device already filled in.
+/* networkNotifyPort:
+ * @obj: the network to notify
+ * @port: the port definition to notify
  *
  * Called to notify the network driver when libvirtd is restarted and
  * finds an already running domain. If appropriate it will force an
  * allocation of the actual->direct.linkdev to get everything back in
  * order.
- *
- * Returns 0 on success, -1 on failure.
  */
 static int
-networkNotifyActualDevice(virNetworkPtr net,
-                          virDomainDefPtr dom,
-                          virDomainNetDefPtr iface)
+networkNotifyPort(virNetworkObjPtr obj,
+                  virNetworkPortDefPtr port)
 {
-    virNetworkDriverStatePtr driver = networkGetDriver();
-    virNetworkObjPtr obj;
     virNetworkDefPtr netdef;
     virNetworkForwardIfDefPtr dev = NULL;
-    virNetworkPortDefPtr port = NULL;
     size_t i;
     int ret = -1;
-
-    obj = virNetworkObjFindByName(driver->networks, net->name);
-    if (!obj) {
-        virReportError(VIR_ERR_NO_NETWORK,
-                       _("no network with matching name '%s'"),
-                       net->name);
-        goto error;
-    }
-
-    if (iface->type != VIR_DOMAIN_NET_TYPE_NETWORK) {
-        virReportError(VIR_ERR_INTERNAL_ERROR, "%s",
-                       _("Expected a interface for a virtual network"));
-        goto error;
-    }
 
     netdef = virNetworkObjGetDef(obj);
 
@@ -4768,30 +4748,27 @@ networkNotifyActualDevice(virNetworkPtr net,
         virReportError(VIR_ERR_OPERATION_INVALID,
                        _("network '%s' is not active"),
                        netdef->name);
-        goto error;
-    }
-
-    if (!(port = virDomainNetDefActualToNetworkPort(dom, iface)))
         goto cleanup;
+    }
 
     switch (port->plugtype) {
     case VIR_NETWORK_PORT_PLUG_TYPE_NONE:
         virReportError(VIR_ERR_INTERNAL_ERROR, "%s",
                        _("Unexpectedly got a network port without a plug"));
-        goto error;
+        goto cleanup;
 
     case VIR_NETWORK_PORT_PLUG_TYPE_BRIDGE:
         /* see if we're connected to the correct bridge */
         if (!netdef->bridge) {
             virReportError(VIR_ERR_INTERNAL_ERROR, "%s",
                            _("Unexpectedly got a network port plugged into a bridge"));
-            goto error;
+            goto cleanup;
         }
         break;
 
     case VIR_NETWORK_PORT_PLUG_TYPE_DIRECT:
         if (networkCreateInterfacePool(netdef) < 0)
-            goto error;
+            goto cleanup;
 
         /* find the matching interface and increment its connections */
         for (i = 0; i < netdef->forward.nifs; i++) {
@@ -4810,7 +4787,7 @@ networkNotifyActualDevice(virNetworkPtr net,
                              "in use by network port '%s'"),
                            netdef->name, port->plug.direct.linkdev,
                            port->uuid);
-            goto error;
+            goto cleanup;
         }
 
         /* PASSTHROUGH mode and PRIVATE Mode + 802.1Qbh both require
@@ -4826,14 +4803,14 @@ networkNotifyActualDevice(virNetworkPtr net,
                            _("network '%s' claims dev='%s' is already in "
                              "use by a different port"),
                            netdef->name, port->plug.direct.linkdev);
-            goto error;
+            goto cleanup;
         }
         break;
 
     case VIR_NETWORK_PORT_PLUG_TYPE_HOSTDEV_PCI:
 
         if (networkCreateInterfacePool(netdef) < 0)
-            goto error;
+            goto cleanup;
 
         /* find the matching interface and increment its connections */
         for (i = 0; i < netdef->forward.nifs; i++) {
@@ -4855,7 +4832,7 @@ networkNotifyActualDevice(virNetworkPtr net,
                            port->plug.hostdevpci.addr.bus,
                            port->plug.hostdevpci.addr.slot,
                            port->plug.hostdevpci.addr.function);
-            goto error;
+            goto cleanup;
         }
 
         /* PASSTHROUGH mode, PRIVATE Mode + 802.1Qbh, and hostdev (PCI
@@ -4871,7 +4848,7 @@ networkNotifyActualDevice(virNetworkPtr net,
                            netdef->name,
                            dev->device.pci.domain, dev->device.pci.bus,
                            dev->device.pci.slot, dev->device.pci.function);
-            goto error;
+            goto cleanup;
         }
 
         break;
@@ -4879,7 +4856,7 @@ networkNotifyActualDevice(virNetworkPtr net,
     case VIR_NETWORK_PORT_PLUG_TYPE_LAST:
     default:
         virReportEnumRangeError(virNetworkPortPlugType, port->plugtype);
-        goto error;
+        goto cleanup;
     }
 
     netdef->connections++;
@@ -4892,18 +4869,61 @@ networkNotifyActualDevice(virNetworkPtr net,
         if (dev)
             dev->connections--;
         netdef->connections--;
-        goto error;
+        goto cleanup;
     }
-    networkLogAllocation(netdef, dev, &iface->mac, true);
-    ret = 0;
+    networkLogAllocation(netdef, dev, &port->mac, true);
 
+    ret = 0;
+ cleanup:
+    return ret;
+}
+
+
+static int
+networkNotifyActualDevice(virNetworkPtr net,
+                          virDomainDefPtr dom,
+                          virDomainNetDefPtr iface)
+{
+    virNetworkDriverStatePtr driver = networkGetDriver();
+    virNetworkObjPtr obj;
+    virNetworkDefPtr netdef;
+    virNetworkPortDefPtr port = NULL;
+    int ret = -1;
+
+    obj = virNetworkObjFindByName(driver->networks, net->name);
+    if (!obj) {
+        virReportError(VIR_ERR_NO_NETWORK,
+                       _("no network with matching name '%s'"),
+                       net->name);
+        goto cleanup;
+    }
+
+    if (iface->type != VIR_DOMAIN_NET_TYPE_NETWORK) {
+        virReportError(VIR_ERR_INTERNAL_ERROR, "%s",
+                       _("Expected a interface for a virtual network"));
+        goto cleanup;
+    }
+
+    netdef = virNetworkObjGetDef(obj);
+
+    if (!virNetworkObjIsActive(obj)) {
+        virReportError(VIR_ERR_OPERATION_INVALID,
+                       _("network '%s' is not active"),
+                       netdef->name);
+        goto cleanup;
+    }
+
+    if (!(port = virDomainNetDefActualToNetworkPort(dom, iface)))
+        goto cleanup;
+
+    if (networkNotifyPort(obj, port) < 0)
+        goto cleanup;
+
+    ret = 0;
  cleanup:
     virNetworkObjEndAPI(&obj);
     virNetworkPortDefFree(port);
     return ret;
-
- error:
-    goto cleanup;
 }
 
 
