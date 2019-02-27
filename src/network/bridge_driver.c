@@ -4927,9 +4927,9 @@ networkNotifyActualDevice(virNetworkPtr net,
 }
 
 
-/* networkReleaseActualDevice:
- * @dom: domain definition that @iface belongs to
- * @iface:  a domain's NetDef (interface definition)
+/* networkReleasePort:
+ * @obj: the network to release from
+ * @port: the port definition to release
  *
  * Given a domain <interface> element that previously had its <actual>
  * element filled in (and possibly a physical device allocated to it),
@@ -4939,39 +4939,14 @@ networkNotifyActualDevice(virNetworkPtr net,
  * Returns 0 on success, -1 on failure.
  */
 static int
-networkReleaseActualDevice(virNetworkPtr net,
-                           virDomainDefPtr dom,
-                           virDomainNetDefPtr iface)
+networkReleasePort(virNetworkObjPtr obj,
+                   virNetworkPortDefPtr port)
 {
     virNetworkDriverStatePtr driver = networkGetDriver();
-    virNetworkObjPtr obj;
     virNetworkDefPtr netdef;
     virNetworkForwardIfDefPtr dev = NULL;
-    virNetworkPortDefPtr port = NULL;
     size_t i;
     int ret = -1;
-
-    obj = virNetworkObjFindByName(driver->networks, net->name);
-    if (!obj) {
-        virReportError(VIR_ERR_NO_NETWORK,
-                       _("no network with matching name '%s'"),
-                       net->name);
-        goto cleanup;
-    }
-
-    if (iface->type != VIR_DOMAIN_NET_TYPE_NETWORK) {
-        virReportError(VIR_ERR_INTERNAL_ERROR, "%s",
-                       _("Expected a interface for a virtual network"));
-        goto cleanup;
-    }
-
-    if (iface->data.network.actual == NULL) {
-        ret = 0;
-        goto cleanup;
-    }
-
-    if (!(port = virDomainNetDefActualToNetworkPort(dom, iface)))
-        goto cleanup;
 
     netdef = virNetworkObjGetDef(obj);
 
@@ -5051,7 +5026,7 @@ networkReleaseActualDevice(virNetworkPtr net,
         goto cleanup;
     }
 
-    virNetworkObjMacMgrDel(obj, driver->dnsmasqStateDir, dom->name, &iface->mac);
+    virNetworkObjMacMgrDel(obj, driver->dnsmasqStateDir, port->ownername, &port->mac);
 
     netdef->connections--;
     if (dev)
@@ -5059,7 +5034,59 @@ networkReleaseActualDevice(virNetworkPtr net,
     /* finally we can call the 'unplugged' hook script if any */
     networkRunHook(obj, port, VIR_HOOK_NETWORK_OP_PORT_DELETED,
                    VIR_HOOK_SUBOP_BEGIN);
-    networkLogAllocation(netdef, dev, &iface->mac, false);
+    networkLogAllocation(netdef, dev, &port->mac, false);
+
+    ret = 0;
+ cleanup:
+    return ret;
+}
+
+
+/* networkReleaseActualDevice:
+ * @dom: domain definition that @iface belongs to
+ * @iface:  a domain's NetDef (interface definition)
+ *
+ * Given a domain <interface> element that previously had its <actual>
+ * element filled in (and possibly a physical device allocated to it),
+ * free up the physical device for use by someone else, and free the
+ * virDomainActualNetDef.
+ *
+ * Returns 0 on success, -1 on failure.
+ */
+static int
+networkReleaseActualDevice(virNetworkPtr net,
+                           virDomainDefPtr dom,
+                           virDomainNetDefPtr iface)
+{
+    virNetworkDriverStatePtr driver = networkGetDriver();
+    virNetworkObjPtr obj;
+    virNetworkPortDefPtr port = NULL;
+    int ret = -1;
+
+    obj = virNetworkObjFindByName(driver->networks, net->name);
+    if (!obj) {
+        virReportError(VIR_ERR_NO_NETWORK,
+                       _("no network with matching name '%s'"),
+                       net->name);
+        goto cleanup;
+    }
+
+    if (iface->type != VIR_DOMAIN_NET_TYPE_NETWORK) {
+        virReportError(VIR_ERR_INTERNAL_ERROR, "%s",
+                       _("Expected a interface for a virtual network"));
+        goto cleanup;
+    }
+
+    if (iface->data.network.actual == NULL) {
+        ret = 0;
+        goto cleanup;
+    }
+
+    if (!(port = virDomainNetDefActualToNetworkPort(dom, iface)))
+        goto cleanup;
+
+    if (networkReleasePort(obj, port) < 0)
+        goto cleanup;
 
     ret = 0;
  cleanup:
