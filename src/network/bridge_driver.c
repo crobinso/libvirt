@@ -3226,7 +3226,7 @@ networkValidate(virNetworkDriverStatePtr driver,
     virPortGroupDefPtr defaultPortGroup = NULL;
     virNetworkIPDefPtr ipdef;
     bool ipv4def = false, ipv6def = false;
-    bool bandwidthAllowed = true;
+    bool bandwidthAllowed = false;
     bool usesInterface = false, usesAddress = false;
 
     if (virXMLCheckIllegalChars("name", def->name, "\n") < 0)
@@ -3247,9 +3247,15 @@ networkValidate(virNetworkDriverStatePtr driver,
             return -1;
 
         virNetworkSetBridgeMacAddr(def);
+        bandwidthAllowed = true;
         break;
 
     case VIR_NETWORK_FORWARD_BRIDGE:
+        if (def->bridge != NULL)
+            bandwidthAllowed = true;
+
+        ATTRIBUTE_FALLTHROUGH;
+
     case VIR_NETWORK_FORWARD_PRIVATE:
     case VIR_NETWORK_FORWARD_VEPA:
     case VIR_NETWORK_FORWARD_PASSTHROUGH:
@@ -3290,20 +3296,21 @@ networkValidate(virNetworkDriverStatePtr driver,
                            virNetworkForwardTypeToString(def->forward.type));
             return -1;
         }
-        if (def->bandwidth) {
-            virReportError(VIR_ERR_CONFIG_UNSUPPORTED,
-                           _("Unsupported network-wide <bandwidth> element "
-                             "in network %s with forward mode='%s'"),
-                           def->name,
-                           virNetworkForwardTypeToString(def->forward.type));
-            return -1;
-        }
-        bandwidthAllowed = false;
         break;
 
     case VIR_NETWORK_FORWARD_LAST:
     default:
         virReportEnumRangeError(virNetworkForwardType, def->forward.type);
+        return -1;
+    }
+
+    if (def->bandwidth &&
+        !bandwidthAllowed) {
+        virReportError(VIR_ERR_CONFIG_UNSUPPORTED,
+                       _("Unsupported network-wide <bandwidth> element "
+                         "in network %s with forward mode='%s'"),
+                       def->name,
+                       virNetworkForwardTypeToString(def->forward.type));
         return -1;
     }
 
@@ -4575,6 +4582,9 @@ networkAllocateActualDevice(virNetworkPtr net,
                     goto error;
                 }
             }
+
+            if (networkPlugBandwidth(obj, iface) < 0)
+                goto error;
             break;
         }
 
@@ -5049,6 +5059,11 @@ networkReleaseActualDevice(virNetworkPtr net,
         break;
 
     case VIR_NETWORK_FORWARD_BRIDGE:
+        if (iface->data.network.actual &&
+            actualType == VIR_DOMAIN_NET_TYPE_BRIDGE &&
+            networkUnplugBandwidth(obj, iface) < 0)
+            goto error;
+        break;
     case VIR_NETWORK_FORWARD_PRIVATE:
     case VIR_NETWORK_FORWARD_VEPA:
     case VIR_NETWORK_FORWARD_PASSTHROUGH:
@@ -5457,7 +5472,9 @@ networkBandwidthGenericChecks(virDomainNetDefPtr iface,
     virNetDevBandwidthPtr ifaceBand;
     unsigned long long old_floor, new_floor;
 
-    if (virDomainNetGetActualType(iface) != VIR_DOMAIN_NET_TYPE_NETWORK) {
+    if (virDomainNetGetActualType(iface) != VIR_DOMAIN_NET_TYPE_NETWORK &&
+        (virDomainNetGetActualType(iface) != VIR_DOMAIN_NET_TYPE_BRIDGE ||
+         iface->data.network.actual->data.bridge.brname == NULL)) {
         /* This is not an interface that's plugged into a network.
          * We don't care. Thus from our POV bandwidth change is allowed. */
         return false;
