@@ -4343,59 +4343,37 @@ networkLogAllocation(virNetworkDefPtr netdef,
  * "backend" function table.
  */
 
-/* networkAllocateActualDevice:
- * @dom: domain definition that @iface belongs to
- * @iface: the original NetDef from the domain
+/* networkAllocatePort:
+ * @obj: the network to allocate from
+ * @port: the port definition to allocate
  *
- * Looks up the network reference by iface, allocates a physical
+ * Looks up the network reference by port, allocates a physical
  * device from that network (if appropriate), and returns with the
- * virDomainActualNetDef filled in accordingly. If there are no
- * changes to be made in the netdef, then just leave the actualdef
- * empty.
+ * port configuration filled in accordingly.
  *
  * Returns 0 on success, -1 on failure.
  */
 static int
-networkAllocateActualDevice(virNetworkPtr net,
-                            virDomainDefPtr dom,
-                            virDomainNetDefPtr iface)
+networkAllocatePort(virNetworkObjPtr obj,
+                    virNetworkPortDefPtr port)
 {
     virNetworkDriverStatePtr driver = networkGetDriver();
-    virNetworkObjPtr obj = NULL;
     virNetworkDefPtr netdef = NULL;
     virPortGroupDefPtr portgroup = NULL;
     virNetworkForwardIfDefPtr dev = NULL;
     size_t i;
     int ret = -1;
     virNetDevVPortProfilePtr portprofile = NULL;
-    virNetworkPortDefPtr port = NULL;
-
-    VIR_DEBUG("Allocating port from net %s", net->name);
-    obj = virNetworkObjFindByName(driver->networks, net->name);
-    if (!obj) {
-        virReportError(VIR_ERR_NO_NETWORK,
-                       _("no network with matching name '%s'"),
-                       net->name);
-        goto error;
-    }
-
-    if (iface->type != VIR_DOMAIN_NET_TYPE_NETWORK) {
-        virReportError(VIR_ERR_INTERNAL_ERROR, "%s",
-                       _("Expected a interface for a virtual network"));
-        goto error;
-    }
 
     netdef = virNetworkObjGetDef(obj);
+    VIR_DEBUG("Allocating port from net %s", netdef->name);
 
     if (!virNetworkObjIsActive(obj)) {
         virReportError(VIR_ERR_OPERATION_INVALID,
                        _("network '%s' is not active"),
                        netdef->name);
-        goto error;
+        goto cleanup;
     }
-
-    if (!(port = virDomainNetDefToNetworkPort(dom, iface)))
-        goto error;
 
     VIR_DEBUG("Interface port group %s", port->group);
     /* portgroup can be present for any type of network, in particular
@@ -4408,7 +4386,7 @@ networkAllocateActualDevice(virNetworkPtr net,
         if (portgroup && portgroup->bandwidth &&
             virNetDevBandwidthCopy(&port->bandwidth,
                                    portgroup->bandwidth) < 0)
-            goto error;
+            goto cleanup;
     }
 
     if (port->vlan.nTags == 0) {
@@ -4419,7 +4397,7 @@ networkAllocateActualDevice(virNetworkPtr net,
             vlan = &netdef->vlan;
 
         if (vlan && virNetDevVlanCopy(&port->vlan, vlan) < 0)
-            goto error;
+            goto cleanup;
     }
 
     if (!port->trustGuestRxFilters) {
@@ -4437,7 +4415,7 @@ networkAllocateActualDevice(virNetworkPtr net,
                                     netdef->virtPortProfile,
                                     portgroup
                                     ? portgroup->virtPortProfile : NULL) < 0) {
-                goto error;
+                goto cleanup;
     }
     if (portprofile) {
         VIR_FREE(port->virtPortProfile);
@@ -4453,7 +4431,7 @@ networkAllocateActualDevice(virNetworkPtr net,
         port->plugtype = VIR_NETWORK_PORT_PLUG_TYPE_BRIDGE;
 
         if (VIR_STRDUP(port->plug.bridge.brname, netdef->bridge) < 0)
-            goto error;
+            goto cleanup;
         port->plug.bridge.macTableManager = netdef->macTableManager;
 
         if (port->virtPortProfile) {
@@ -4462,18 +4440,18 @@ networkAllocateActualDevice(virNetworkPtr net,
                              "'%s' which uses IP forwarding"),
                            virNetDevVPortTypeToString(port->virtPortProfile->virtPortType),
                            netdef->name);
-            goto error;
+            goto cleanup;
         }
 
         if (networkPlugBandwidth(obj, &port->mac, port->bandwidth, &port->class_id) < 0)
-            goto error;
+            goto cleanup;
         break;
 
     case VIR_NETWORK_FORWARD_HOSTDEV: {
         port->plugtype = VIR_NETWORK_PORT_PLUG_TYPE_HOSTDEV_PCI;
 
         if (networkCreateInterfacePool(netdef) < 0)
-            goto error;
+            goto cleanup;
 
         /* pick first dev with 0 connections */
         for (i = 0; i < netdef->forward.nifs; i++) {
@@ -4487,7 +4465,7 @@ networkAllocateActualDevice(virNetworkPtr net,
                            _("network '%s' requires exclusive access "
                              "to interfaces, but none are available"),
                            netdef->name);
-            goto error;
+            goto cleanup;
         }
         port->plug.hostdevpci.addr = dev->device.pci;
         port->plug.hostdevpci.driver = netdef->forward.driverName;
@@ -4503,7 +4481,7 @@ networkAllocateActualDevice(virNetworkPtr net,
                                  "via PCI passthrough"),
                                virNetDevVPortTypeToString(port->virtPortProfile->virtPortType),
                                netdef->name);
-                goto error;
+                goto cleanup;
             }
         }
         break;
@@ -4517,7 +4495,7 @@ networkAllocateActualDevice(virNetworkPtr net,
 
             port->plugtype = VIR_NETWORK_PORT_PLUG_TYPE_BRIDGE;
             if (VIR_STRDUP(port->plug.bridge.brname, netdef->bridge) < 0)
-                goto error;
+                goto cleanup;
             port->plug.bridge.macTableManager = netdef->macTableManager;
 
             if (port->virtPortProfile) {
@@ -4528,12 +4506,12 @@ networkAllocateActualDevice(virNetworkPtr net,
                                      "'%s' which uses a bridge device"),
                                    virNetDevVPortTypeToString(port->virtPortProfile->virtPortType),
                                    netdef->name);
-                    goto error;
+                    goto cleanup;
                 }
             }
 
             if (networkPlugBandwidth(obj, &port->mac, port->bandwidth, &port->class_id) < 0)
-                goto error;
+                goto cleanup;
             break;
         }
 
@@ -4567,7 +4545,7 @@ networkAllocateActualDevice(virNetworkPtr net,
                                  "'%s' which uses a macvtap device"),
                                virNetDevVPortTypeToString(port->virtPortProfile->virtPortType),
                                netdef->name);
-                goto error;
+                goto cleanup;
             }
         }
 
@@ -4579,12 +4557,12 @@ networkAllocateActualDevice(virNetworkPtr net,
                            _("network '%s' uses a direct mode, but "
                              "has no forward dev and no interface pool"),
                            netdef->name);
-            goto error;
+            goto cleanup;
         } else {
             /* pick an interface from the pool */
 
             if (networkCreateInterfacePool(netdef) < 0)
-                goto error;
+                goto cleanup;
 
             /* PASSTHROUGH mode, and PRIVATE Mode + 802.1Qbh both
              * require exclusive access to a device, so current
@@ -4619,26 +4597,26 @@ networkAllocateActualDevice(virNetworkPtr net,
                                _("network '%s' requires exclusive access "
                                  "to interfaces, but none are available"),
                                netdef->name);
-                goto error;
+                goto cleanup;
             }
             if (VIR_STRDUP(port->plug.direct.linkdev,
                            dev->device.dev) < 0)
-                goto error;
+                goto cleanup;
         }
         break;
 
     case VIR_NETWORK_FORWARD_LAST:
     default:
         virReportEnumRangeError(virNetworkForwardType, netdef->forward.type);
-        goto error;
+        goto cleanup;
     }
 
     if (virNetworkObjMacMgrAdd(obj, driver->dnsmasqStateDir,
-                               dom->name, &port->mac) < 0)
-        goto error;
+                               port->ownername, &port->mac) < 0)
+        goto cleanup;
 
     if (virNetDevVPortProfileCheckComplete(port->virtPortProfile, true) < 0)
-        goto error;
+        goto cleanup;
 
     /* make sure that everything now specified for the device is
      * actually supported on this type of network. NB: network,
@@ -4663,7 +4641,7 @@ networkAllocateActualDevice(virNetworkPtr net,
                              "is requesting a vlan tag, but that is not "
                              "supported for this type of network"),
                            netdef->name);
-            goto error;
+            goto cleanup;
         }
     }
 
@@ -4674,7 +4652,7 @@ networkAllocateActualDevice(virNetworkPtr net,
         virReportError(VIR_ERR_CONFIG_UNSUPPORTED, "%s",
                        _("bandwidth settings are not supported "
                          "for hostdev interfaces"));
-        goto error;
+        goto cleanup;
     }
 
     netdef->connections++;
@@ -4688,28 +4666,61 @@ networkAllocateActualDevice(virNetworkPtr net,
         netdef->connections--;
         if (dev)
             dev->connections--;
-        goto error;
+        goto cleanup;
     }
-    networkLogAllocation(netdef, dev, &iface->mac, true);
+    networkLogAllocation(netdef, dev, &port->mac, true);
+
+    VIR_DEBUG("Port allocated");
+
+    ret = 0;
+ cleanup:
+    return ret;
+}
+
+
+static int
+networkAllocateActualDevice(virNetworkPtr net,
+                            virDomainDefPtr dom,
+                            virDomainNetDefPtr iface)
+{
+    virNetworkDriverStatePtr driver = networkGetDriver();
+    virNetworkPortDefPtr port = NULL;
+    virNetworkObjPtr obj;
+    int ret =  -1;
+
+    obj = virNetworkObjFindByName(driver->networks, net->name);
+    if (!obj) {
+        virReportError(VIR_ERR_NO_NETWORK,
+                       _("no network with matching name '%s'"),
+                       net->name);
+        return -1;
+    }
+
+    if (iface->type != VIR_DOMAIN_NET_TYPE_NETWORK) {
+        virReportError(VIR_ERR_INTERNAL_ERROR, "%s",
+                       _("Expected a interface for a virtual network"));
+        goto cleanup;
+    }
+
+    if (!(port = virDomainNetDefToNetworkPort(dom, iface)))
+        goto cleanup;
+
+    if (networkAllocatePort(obj, port) < 0)
+        goto cleanup;
 
     VIR_DEBUG("Populating net def");
     if (virDomainNetDefActualFromNetworkPort(iface, port) < 0)
-        goto error;
+        goto cleanup;
 
-    VIR_DEBUG("Port allocated");
     ret = 0;
-
  cleanup:
-    virNetworkPortDefFree(port);
-    virNetworkObjEndAPI(&obj);
-    return ret;
-
- error:
-    if (iface->type == VIR_DOMAIN_NET_TYPE_NETWORK) {
+    if (ret < 0) {
         virDomainActualNetDefFree(iface->data.network.actual);
         iface->data.network.actual = NULL;
     }
-    goto cleanup;
+    virNetworkPortDefFree(port);
+    virNetworkObjEndAPI(&obj);
+    return ret;
 }
 
 
