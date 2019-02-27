@@ -1017,9 +1017,12 @@ virInterfaceObjSetActive;
 
 
 # conf/virnetworkobj.h
+virNetworkObjAddPort;
 virNetworkObjAssignDef;
 virNetworkObjBridgeInUse;
+virNetworkObjDeleteAllPorts;
 virNetworkObjDeleteConfig;
+virNetworkObjDeletePort;
 virNetworkObjEndAPI;
 virNetworkObjFindByName;
 virNetworkObjFindByUUID;
@@ -1030,6 +1033,7 @@ virNetworkObjGetFloorSum;
 virNetworkObjGetMacMap;
 virNetworkObjGetNewDef;
 virNetworkObjGetPersistentDef;
+virNetworkObjGetPortStatusDir;
 virNetworkObjGetRadvdPid;
 virNetworkObjIsActive;
 virNetworkObjIsAutostart;
@@ -1042,9 +1046,11 @@ virNetworkObjListNumOfNetworks;
 virNetworkObjListPrune;
 virNetworkObjLoadAllConfigs;
 virNetworkObjLoadAllState;
+virNetworkObjLookupPort;
 virNetworkObjMacMgrAdd;
 virNetworkObjMacMgrDel;
 virNetworkObjNew;
+virNetworkObjPortListExport;
 virNetworkObjRemoveInactive;
 virNetworkObjReplacePersistentDef;
 virNetworkObjSaveStatus;
