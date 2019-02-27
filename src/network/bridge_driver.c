@@ -205,14 +205,13 @@ networkObjFromNetwork(virNetworkPtr net)
 
 static int
 networkRunHook(virNetworkObjPtr obj,
-               virDomainDefPtr dom,
-               virDomainNetDefPtr iface,
+               virNetworkPortDefPtr port,
                int op,
                int sub_op)
 {
     virNetworkDefPtr def;
     virBuffer buf = VIR_BUFFER_INITIALIZER;
-    char *xml = NULL, *net_xml = NULL, *dom_xml = NULL;
+    char *xml = NULL;
     int hookret;
     int ret = -1;
 
@@ -226,11 +225,9 @@ networkRunHook(virNetworkObjPtr obj,
 
         virBufferAddLit(&buf, "<hookData>\n");
         virBufferAdjustIndent(&buf, 2);
-        if (iface && virDomainNetDefFormat(&buf, iface, NULL, 0) < 0)
-            goto cleanup;
         if (virNetworkDefFormatBuf(&buf, def, 0) < 0)
             goto cleanup;
-        if (dom && virDomainDefFormatInternal(dom, NULL, 0, &buf, NULL) < 0)
+        if (port && virNetworkPortDefFormatBuf(&buf, port) < 0)
             goto cleanup;
 
         virBufferAdjustIndent(&buf, -2);
@@ -256,8 +253,6 @@ networkRunHook(virNetworkObjPtr obj,
  cleanup:
     virBufferFreeAndReset(&buf);
     VIR_FREE(xml);
-    VIR_FREE(net_xml);
-    VIR_FREE(dom_xml);
     return ret;
 }
 
@@ -2763,7 +2758,7 @@ networkStartNetwork(virNetworkDriverStatePtr driver,
 
     /* Run an early hook to set-up missing devices.
      * If the script raised an error abort the launch. */
-    if (networkRunHook(obj, NULL, NULL,
+    if (networkRunHook(obj, NULL,
                        VIR_HOOK_NETWORK_OP_START,
                        VIR_HOOK_SUBOP_BEGIN) < 0)
         goto cleanup;
@@ -2805,7 +2800,7 @@ networkStartNetwork(virNetworkDriverStatePtr driver,
     }
 
     /* finally we can call the 'started' hook script if any */
-    if (networkRunHook(obj, NULL, NULL,
+    if (networkRunHook(obj, NULL,
                        VIR_HOOK_NETWORK_OP_STARTED,
                        VIR_HOOK_SUBOP_BEGIN) < 0)
         goto cleanup;
@@ -2889,7 +2884,7 @@ networkShutdownNetwork(virNetworkDriverStatePtr driver,
     }
 
     /* now that we know it's stopped call the hook if present */
-    networkRunHook(obj, NULL, NULL, VIR_HOOK_NETWORK_OP_STOPPED,
+    networkRunHook(obj, NULL, VIR_HOOK_NETWORK_OP_STOPPED,
                    VIR_HOOK_SUBOP_END);
 
     virNetworkObjSetActive(obj, false);
@@ -3865,7 +3860,7 @@ networkUpdate(virNetworkPtr net,
     }
 
     /* call the 'updated' network hook script */
-    if (networkRunHook(obj, NULL, NULL, VIR_HOOK_NETWORK_OP_UPDATED,
+    if (networkRunHook(obj, NULL, VIR_HOOK_NETWORK_OP_UPDATED,
                        VIR_HOOK_SUBOP_BEGIN) < 0)
         goto cleanup;
 
@@ -4686,8 +4681,8 @@ networkAllocateActualDevice(virNetworkPtr net,
     if (dev)
         dev->connections++;
     /* finally we can call the 'plugged' hook script if any */
-    if (networkRunHook(obj, dom, iface,
-                       VIR_HOOK_NETWORK_OP_IFACE_PLUGGED,
+    if (networkRunHook(obj, port,
+                       VIR_HOOK_NETWORK_OP_PORT_CREATED,
                        VIR_HOOK_SUBOP_BEGIN) < 0) {
         /* adjust for failure */
         netdef->connections--;
@@ -4880,7 +4875,7 @@ networkNotifyActualDevice(virNetworkPtr net,
     if (dev)
         dev->connections++;
     /* finally we can call the 'plugged' hook script if any */
-    if (networkRunHook(obj, dom, iface, VIR_HOOK_NETWORK_OP_IFACE_PLUGGED,
+    if (networkRunHook(obj, port, VIR_HOOK_NETWORK_OP_PORT_CREATED,
                        VIR_HOOK_SUBOP_BEGIN) < 0) {
         /* adjust for failure */
         if (dev)
@@ -5031,7 +5026,7 @@ networkReleaseActualDevice(virNetworkPtr net,
     if (dev)
         dev->connections--;
     /* finally we can call the 'unplugged' hook script if any */
-    networkRunHook(obj, dom, iface, VIR_HOOK_NETWORK_OP_IFACE_UNPLUGGED,
+    networkRunHook(obj, port, VIR_HOOK_NETWORK_OP_PORT_DELETED,
                    VIR_HOOK_SUBOP_BEGIN);
     networkLogAllocation(netdef, dev, &iface->mac, false);
 

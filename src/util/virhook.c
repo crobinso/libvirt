@@ -95,8 +95,8 @@ VIR_ENUM_IMPL(virHookNetworkOp, VIR_HOOK_NETWORK_OP_LAST,
               "start",
               "started",
               "stopped",
-              "plugged",
-              "unplugged",
+              "port-created",
+              "port-deleted",
               "updated",
 );
 
