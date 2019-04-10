@@ -6636,6 +6636,10 @@ qemuProcessLaunch(virConnectPtr conn,
     if (qemuProcessInitCpuAffinity(vm) < 0)
         goto cleanup;
 
+    VIR_DEBUG("Setting emulator tuning/settings");
+    if (qemuProcessSetupEmulator(vm) < 0)
+        goto cleanup;
+
     VIR_DEBUG("Setting cgroup for external devices (if required)");
     if (qemuSetupCgroupForExtDevices(vm, driver) < 0)
         goto cleanup;
@@ -6725,10 +6729,6 @@ qemuProcessLaunch(virConnectPtr conn,
 
     VIR_DEBUG("Detecting IOThread PIDs");
     if (qemuProcessDetectIOThreadPIDs(driver, vm, asyncJob) < 0)
-        goto cleanup;
-
-    VIR_DEBUG("Setting emulator tuning/settings");
-    if (qemuProcessSetupEmulator(vm) < 0)
         goto cleanup;
 
     VIR_DEBUG("Setting global CPU cgroup (if required)");
