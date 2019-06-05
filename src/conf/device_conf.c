@@ -96,6 +96,7 @@ virDomainDeviceInfoClear(virDomainDeviceInfoPtr info)
     VIR_FREE(info->loadparm);
     info->isolationGroup = 0;
     info->isolationGroupLocked = false;
+    VIR_FREE(info->vhost_user_binary);
 }
 
 void

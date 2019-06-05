@@ -287,6 +287,7 @@ test_programs += qemuxml2argvtest qemuxml2xmltest \
 	qemumigparamstest \
 	qemusecuritytest \
 	qemufirmwaretest \
+	qemuvhostusertest \
 	$(NULL)
 test_helpers += qemucapsprobe
 test_libraries += libqemumonitortestutils.la \
@@ -689,6 +690,13 @@ qemufirmwaretest_SOURCES = \
 	$(NULL)
 qemufirmwaretest_LDADD = $(qemu_LDADDS)
 
+qemuvhostusertest_SOURCES = \
+	qemuvhostusertest.c \
+	testutils.h testutils.c \
+	virfilewrapper.c virfilewrapper.h \
+	$(NULL)
+qemuvhostusertest_LDADD = $(qemu_LDADDS)
+
 else ! WITH_QEMU
 EXTRA_DIST += qemuxml2argvtest.c qemuxml2xmltest.c \
 	qemudomaincheckpointxml2xmltest.c qemudomainsnapshotxml2xmltest.c \
@@ -703,6 +711,7 @@ EXTRA_DIST += qemuxml2argvtest.c qemuxml2xmltest.c \
 	qemusecuritytest.c qemusecuritytest.h \
 	qemusecuritymock.c \
 	qemufirmwaretest.c \
+	qemuvhostusertest.c \
 	$(QEMUMONITORTESTUTILS_SOURCES)
 endif ! WITH_QEMU
 
