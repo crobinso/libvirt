@@ -3644,6 +3644,11 @@
                   <ref name="virYesNo"/>
                 </attribute>
               </optional>
+              <optional>
+                <attribute name="rendernode">
+                  <ref name="absFilePath"/>
+                </attribute>
+              </optional>
             </element>
           </optional>
         </element>
