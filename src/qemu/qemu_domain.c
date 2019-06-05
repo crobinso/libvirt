@@ -12386,9 +12386,14 @@ bool
 qemuDomainSupportsVideoVga(virDomainVideoDefPtr video,
                            virQEMUCapsPtr qemuCaps)
 {
-    if (video->type == VIR_DOMAIN_VIDEO_TYPE_VIRTIO &&
-        !virQEMUCapsGet(qemuCaps, QEMU_CAPS_DEVICE_VIRTIO_VGA))
-        return false;
+    if (video->type == VIR_DOMAIN_VIDEO_TYPE_VIRTIO) {
+        if (video->vhostuser) {
+            if (!virQEMUCapsGet(qemuCaps, QEMU_CAPS_DEVICE_VHOST_USER_VGA))
+                return false;
+        } else if (!virQEMUCapsGet(qemuCaps, QEMU_CAPS_DEVICE_VIRTIO_VGA)) {
+            return false;
+        }
+    }
 
     return true;
 }
