@@ -5274,8 +5274,10 @@ qemuProcessStartValidateVideo(virDomainObjPtr vm,
              !virQEMUCapsGet(qemuCaps, QEMU_CAPS_DEVICE_VMWARE_SVGA)) ||
             (video->type == VIR_DOMAIN_VIDEO_TYPE_QXL &&
              !virQEMUCapsGet(qemuCaps, QEMU_CAPS_DEVICE_QXL)) ||
-            (video->type == VIR_DOMAIN_VIDEO_TYPE_VIRTIO &&
+            (video->type == VIR_DOMAIN_VIDEO_TYPE_VIRTIO && !video->vhostuser &&
              !virQEMUCapsGet(qemuCaps, QEMU_CAPS_DEVICE_VIRTIO_GPU)) ||
+            (video->type == VIR_DOMAIN_VIDEO_TYPE_VIRTIO && video->vhostuser &&
+             !virQEMUCapsGet(qemuCaps, QEMU_CAPS_DEVICE_VHOST_USER_GPU)) ||
             (video->type == VIR_DOMAIN_VIDEO_TYPE_VIRTIO &&
              video->info.type == VIR_DOMAIN_DEVICE_ADDRESS_TYPE_CCW &&
              !virQEMUCapsGet(qemuCaps, QEMU_CAPS_DEVICE_VIRTIO_GPU_CCW))) {
@@ -5285,7 +5287,15 @@ qemuProcessStartValidateVideo(virDomainObjPtr vm,
             return -1;
         }
 
-        if (video->accel) {
+        if (video->type == VIR_DOMAIN_VIDEO_TYPE_VIRTIO &&
+            video->vhostuser &&
+            !virQEMUCapsGet(qemuCaps, QEMU_CAPS_DEVICE_VHOST_USER_GPU)) {
+            virReportError(VIR_ERR_CONFIG_UNSUPPORTED, "%s",
+                           _("this QEMU does not support vhost-user backed video device"));
+            return -1;
+        }
+
+        if (!video->vhostuser && video->accel) {
             if (video->accel->accel3d == VIR_TRISTATE_SWITCH_ON &&
                 (video->type != VIR_DOMAIN_VIDEO_TYPE_VIRTIO ||
                  !virQEMUCapsGet(qemuCaps, QEMU_CAPS_VIRTIO_GPU_VIRGL))) {
