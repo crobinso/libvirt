@@ -674,6 +674,15 @@ mymain(void)
     virFileWrapperAddPrefix("/home/user/.config/qemu/firmware",
                             abs_srcdir "/qemufirmwaredata/home/user/.config/qemu/firmware");
 
+    virFileWrapperAddPrefix(SYSCONFDIR "/qemu/vhost-user",
+                            abs_srcdir "/qemuvhostuserdata/etc/qemu/vhost-user");
+    virFileWrapperAddPrefix(PREFIX "/share/qemu/vhost-user",
+                            abs_srcdir "/qemuvhostuserdata/usr/share/qemu/vhost-user");
+    virFileWrapperAddPrefix("/home/user/.config/qemu/vhost-user",
+                            abs_srcdir "/qemuvhostuserdata/home/user/.config/qemu/vhost-user");
+    virFileWrapperAddPrefix("/usr/libexec/qemu/vhost-user",
+                            abs_srcdir "/qemuvhostuserdata/usr/libexec/qemu/vhost-user");
+
 /**
  * The following set of macros allows testing of XML -> argv conversion with a
  * real set of capabilities gathered from a real qemu copy. It is desired to use
@@ -2980,6 +2989,18 @@ mymain(void)
     DO_TEST_CAPS_LATEST("os-firmware-efi");
     DO_TEST_CAPS_LATEST("os-firmware-efi-secboot");
     DO_TEST_CAPS_ARCH_LATEST("aarch64-os-firmware-efi", "aarch64");
+
+    DO_TEST("vhost-user-vga",
+            QEMU_CAPS_OBJECT_MEMORY_MEMFD,
+            QEMU_CAPS_DEVICE_VIDEO_PRIMARY,
+            QEMU_CAPS_DEVICE_VHOST_USER_GPU,
+            QEMU_CAPS_DEVICE_VHOST_USER_VGA);
+
+    DO_TEST("vhost-user-gpu-secondary",
+            QEMU_CAPS_OBJECT_MEMORY_MEMFD,
+            QEMU_CAPS_DEVICE_VIDEO_PRIMARY,
+            QEMU_CAPS_DEVICE_VHOST_USER_GPU,
+            QEMU_CAPS_DEVICE_VHOST_USER_VGA);
 
     if (getenv("LIBVIRT_SKIP_CLEANUP") == NULL)
         virFileDeleteTree(fakerootdir);
