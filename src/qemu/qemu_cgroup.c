@@ -504,6 +504,25 @@ qemuSetupGraphicsCgroup(virDomainObjPtr vm,
 
 
 static int
+qemuSetupVideoAccelCgroup(virDomainObjPtr vm,
+                          virDomainVideoAccelDefPtr def)
+{
+    qemuDomainObjPrivatePtr priv = vm->privateData;
+    int ret;
+
+    if (!def->rendernode ||
+        !virCgroupHasController(priv->cgroup, VIR_CGROUP_CONTROLLER_DEVICES))
+        return 0;
+
+    ret = virCgroupAllowDevicePath(priv->cgroup, def->rendernode,
+                                   VIR_CGROUP_DEVICE_RW, false);
+    virDomainAuditCgroupPath(vm, priv->cgroup, "allow", def->rendernode,
+                             "rw", ret);
+    return ret;
+}
+
+
+static int
 qemuSetupBlkioCgroup(virDomainObjPtr vm)
 {
     qemuDomainObjPrivatePtr priv = vm->privateData;
@@ -800,6 +819,11 @@ qemuSetupDevicesCgroup(virDomainObjPtr vm)
 
     for (i = 0; i < vm->def->ngraphics; i++) {
         if (qemuSetupGraphicsCgroup(vm, vm->def->graphics[i]) < 0)
+            goto cleanup;
+    }
+
+    for (i = 0; i < vm->def->nvideos; i++) {
+        if (qemuSetupVideoAccelCgroup(vm, vm->def->videos[i]->accel) < 0)
             goto cleanup;
     }
 
