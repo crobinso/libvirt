@@ -7039,6 +7039,12 @@ qemu-kvm -net nic,model=? /dev/null
           Attribute <code>vram64</code> (<span class="since">since 1.3.3</span>)
           extends secondary bar and makes it addressable as 64bit memory.
         </p>
+        <p>
+          For guest type "kvm" and model type "virtio" there are
+          optional attributes. Attribute <code>vhost-user</code>
+          (<span class="since">since 5.5.0</span>) specify that a
+          vhost-user helper process should be associated with the GPU.
+        </p>
       </dd>
 
       <dt><code>acceleration</code></dt>
