@@ -331,13 +331,13 @@ test_programs += virjsontest
 endif WITH_YAJL
 
 test_programs += \
-		networkxml2xmltest \
 		networkxml2xmlupdatetest \
 		virnetworkportxml2xmltest \
 		$(NULL)
 
 if WITH_NETWORK
 test_programs += \
+		networkxml2xmltest \
 		networkxml2conftest \
 		networkxml2firewalltest \
 		$(NULL)
@@ -806,11 +806,6 @@ EXTRA_DIST += \
 	bhyveargv2xmlmock.c
 endif ! WITH_BHYVE
 
-networkxml2xmltest_SOURCES = \
-	networkxml2xmltest.c \
-	testutils.c testutils.h
-networkxml2xmltest_LDADD = $(LDADDS)
-
 networkxml2xmlupdatetest_SOURCES = \
 	networkxml2xmlupdatetest.c \
 	testutils.c testutils.h
@@ -822,6 +817,11 @@ virnetworkportxml2xmltest_SOURCES = \
 virnetworkportxml2xmltest_LDADD = $(LDADDS)
 
 if WITH_NETWORK
+networkxml2xmltest_SOURCES = \
+	networkxml2xmltest.c \
+	testutils.c testutils.h
+networkxml2xmltest_LDADD = ../src/libvirt_driver_network_impl.la $(LDADDS)
+
 networkxml2conftest_SOURCES = \
 	networkxml2conftest.c \
 	testutils.c testutils.h
@@ -833,7 +833,7 @@ networkxml2firewalltest_SOURCES = \
 networkxml2firewalltest_LDADD = ../src/libvirt_driver_network_impl.la $(LDADDS)
 
 else ! WITH_NETWORK
-EXTRA_DIST += networkxml2conftest.c
+EXTRA_DIST += networkxml2xmltest.c networkxml2conftest.c
 endif !	WITH_NETWORK
 
 if WITH_STORAGE_SHEEPDOG
