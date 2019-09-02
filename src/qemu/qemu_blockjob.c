@@ -597,7 +597,23 @@ qemuBlockJobEventProcessLegacyCompleted(virQEMUDriverPtr driver,
         disk->src = disk->mirror;
     } else {
         if (disk->mirror) {
+            virStorageSourcePtr n;
+
             virDomainLockImageDetach(driver->lockManager, vm, disk->mirror);
+
+            /* Ideally, we would restore seclabels on the backing chain here
+             * but we don't know if somebody else is not using parts of it.
+             * Remove security driver metadata so that they are not leaked. */
+            for (n = disk->mirror; virStorageSourceIsBacking(n); n = n->backingStore) {
+                if (qemuSecurityMoveImageMetadata(driver, vm, n, NULL) < 0) {
+                    VIR_WARN("Unable to remove disk metadata on "
+                             "vm %s from %s (disk target %s)",
+                             vm->def->name,
+                             NULLSTR(disk->src->path),
+                             disk->dst);
+                }
+            }
+
             virObjectUnref(disk->mirror);
         }
     }
@@ -666,7 +682,23 @@ qemuBlockJobEventProcessLegacy(virQEMUDriverPtr driver,
     case VIR_DOMAIN_BLOCK_JOB_FAILED:
     case VIR_DOMAIN_BLOCK_JOB_CANCELED:
         if (disk->mirror) {
+            virStorageSourcePtr n;
+
             virDomainLockImageDetach(driver->lockManager, vm, disk->mirror);
+
+            /* Ideally, we would restore seclabels on the backing chain here
+             * but we don't know if somebody else is not using parts of it.
+             * Remove security driver metadata so that they are not leaked. */
+            for (n = disk->mirror; virStorageSourceIsBacking(n); n = n->backingStore) {
+                if (qemuSecurityMoveImageMetadata(driver, vm, n, NULL) < 0) {
+                    VIR_WARN("Unable to remove disk metadata on "
+                             "vm %s from %s (disk target %s)",
+                             vm->def->name,
+                             NULLSTR(disk->src->path),
+                             disk->dst);
+                }
+            }
+
             virObjectUnref(disk->mirror);
             disk->mirror = NULL;
         }
