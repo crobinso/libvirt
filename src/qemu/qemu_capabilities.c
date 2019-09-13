@@ -4489,6 +4489,9 @@ virQEMUCapsInitProcessCaps(virQEMUCapsPtr qemuCaps)
 
     if (virQEMUCapsGet(qemuCaps, QEMU_CAPS_CPU_UNAVAILABLE_FEATURES))
         virQEMUCapsSet(qemuCaps, QEMU_CAPS_CANONICAL_CPU_FEATURES);
+    if (virQEMUCapsGet(qemuCaps, QEMU_CAPS_BLOCK_FILE_AUTO_READONLY_DYNAMIC) &&
+        virQEMUCapsGet(qemuCaps, QEMU_CAPS_SCSI_DISK_DEVICE_ID))
+        virQEMUCapsSet(qemuCaps, QEMU_CAPS_BLOCKDEV);
 }
 
 
