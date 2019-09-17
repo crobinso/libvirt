@@ -473,7 +473,7 @@ daemonSetupNetworking(virNetServerPtr srv,
                                   config->max_client_requests) < 0)
         goto cleanup;
 
-    if (((ipsock && config->listen_tls) || (act && virSystemdActivationHasName(act, "ip-tls")))) {
+    if (((ipsock && config->listen_tls) || (act && virSystemdActivationHasName(act, "libvirtd-tls.socket")))) {
         virNetTLSContextPtr ctxt = NULL;
 
         if (config->ca_file ||
