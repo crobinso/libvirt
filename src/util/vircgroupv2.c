@@ -155,10 +155,14 @@ virCgroupV2CopyPlacement(virCgroupPtr group,
                          const char *path,
                          virCgroupPtr parent)
 {
+    VIR_DEBUG("group=%p path=%s parent=%p", group, path, parent);
+
     if (path[0] == '/') {
         if (VIR_STRDUP(group->unified.placement, path) < 0)
             return -1;
     } else {
+        VIR_DEBUG("parent->unified.placement=%s", parent->unified.placement);
+
         /*
          * parent == "/" + path="" => "/"
          * parent == "/libvirt.service" + path == "" => "/libvirt.service"
@@ -172,6 +176,7 @@ virCgroupV2CopyPlacement(virCgroupPtr group,
             return -1;
     }
 
+    VIR_DEBUG("set group->unified.placement=%s", group->unified.placement);
     return 0;
 }
 
@@ -200,6 +205,9 @@ virCgroupV2DetectPlacement(virCgroupPtr group,
     if (group->unified.placement)
         return 0;
 
+    VIR_DEBUG("group=%p path=%s controllers=%s selfpath=%s",
+              group, path, controllers, selfpath);
+
     /* controllers="" indicates the cgroupv2 controller path */
     if (STRNEQ_NULLABLE(controllers, ""))
         return 0;
@@ -216,6 +224,7 @@ virCgroupV2DetectPlacement(virCgroupPtr group,
                     path) < 0)
         return -1;
 
+    VIR_DEBUG("set group->unified.placement=%s", group->unified.placement);
     return 0;
 }
 
