@@ -2258,6 +2258,7 @@ virStorageSourceCopy(const virStorageSource *src,
         VIR_STRDUP(def->volume, src->volume) < 0 ||
         VIR_STRDUP(def->relPath, src->relPath) < 0 ||
         VIR_STRDUP(def->backingStoreRaw, src->backingStoreRaw) < 0 ||
+        VIR_STRDUP(def->externalDataStoreRaw, src->externalDataStoreRaw) < 0 ||
         VIR_STRDUP(def->snapshot, src->snapshot) < 0 ||
         VIR_STRDUP(def->configFile, src->configFile) < 0 ||
         VIR_STRDUP(def->nodeformat, src->nodeformat) < 0 ||
@@ -2533,6 +2534,7 @@ virStorageSourceClear(virStorageSourcePtr def)
     virStorageSourceSeclabelsClear(def);
     virStoragePermsFree(def->perms);
     VIR_FREE(def->timestamps);
+    VIR_FREE(def->externalDataStoreRaw);
 
     virStorageNetHostDefFree(def->nhosts, def->hosts);
     virStorageAuthDefFree(def->auth);
