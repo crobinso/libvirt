@@ -202,6 +202,7 @@ qedGetBackingStore(char **, int *, const char *, size_t);
 
 #define QCOW2_HDR_EXTENSION_END 0
 #define QCOW2_HDR_EXTENSION_BACKING_FORMAT 0xE2792ACA
+#define QCOW2_HDR_EXTENSION_DATA_FILE 0x44415441
 
 #define QCOW2v3_HDR_FEATURES_INCOMPATIBLE (QCOW2_HDR_TOTAL_SIZE)
 #define QCOW2v3_HDR_FEATURES_COMPATIBLE (QCOW2v3_HDR_FEATURES_INCOMPATIBLE+8)
@@ -429,7 +430,8 @@ cowGetBackingStore(char **res,
 static int
 qcow2GetExtensions(const char *buf,
                    size_t buf_size,
-                   int *backingFormat)
+                   int *backingFormat,
+                   char **externalDataStoreRaw)
 {
     size_t offset;
     size_t extension_start;
@@ -508,6 +510,9 @@ qcow2GetExtensions(const char *buf,
 
         case QCOW2_HDR_EXTENSION_BACKING_FORMAT: {
             VIR_AUTOFREE(char *) tmp = NULL;
+            if (!backingFormat)
+                break;
+
             if (VIR_ALLOC_N(tmp, len + 1) < 0)
                 return -1;
             memcpy(tmp, buf + offset, len);
@@ -516,6 +521,19 @@ qcow2GetExtensions(const char *buf,
             *backingFormat = virStorageFileFormatTypeFromString(tmp);
             if (*backingFormat <= VIR_STORAGE_FILE_NONE)
                 return -1;
+            break;
+        }
+
+        case QCOW2_HDR_EXTENSION_DATA_FILE: {
+            if (!externalDataStoreRaw)
+                break;
+
+            if (VIR_ALLOC_N(*externalDataStoreRaw, len + 1) < 0)
+                return -1;
+            memcpy(*externalDataStoreRaw, buf + offset, len);
+            (*externalDataStoreRaw)[len] = '\0';
+            VIR_DEBUG("parsed externalDataStoreRaw='%s'", *externalDataStoreRaw);
+            break;
         }
         }
 
@@ -566,7 +584,7 @@ qcowXGetBackingStore(char **res,
     memcpy(*res, buf + offset, size);
     (*res)[size] = '\0';
 
-    if (qcow2GetExtensions(buf, buf_size, format) < 0)
+    if (qcow2GetExtensions(buf, buf_size, format, NULL) < 0)
         return BACKING_STORE_INVALID;
 
     return BACKING_STORE_OK;
