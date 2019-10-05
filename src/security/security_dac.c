@@ -954,10 +954,10 @@ virSecurityDACSetImageLabel(virSecurityManagerPtr mgr,
 
 
 static int
-virSecurityDACRestoreImageLabelInt(virSecurityManagerPtr mgr,
-                                   virDomainDefPtr def,
-                                   virStorageSourcePtr src,
-                                   bool migrated)
+virSecurityDACRestoreImageLabelSingle(virSecurityManagerPtr mgr,
+                                      virDomainDefPtr def,
+                                      virStorageSourcePtr src,
+                                      bool migrated)
 {
     virSecurityDACDataPtr priv = virSecurityManagerGetPrivateData(mgr);
     virSecurityLabelDefPtr secdef;
@@ -1005,6 +1005,26 @@ virSecurityDACRestoreImageLabelInt(virSecurityManagerPtr mgr,
     }
 
     return virSecurityDACRestoreFileLabelInternal(mgr, src, NULL, true);
+}
+
+
+static int
+virSecurityDACRestoreImageLabelInt(virSecurityManagerPtr mgr,
+                                   virDomainDefPtr def,
+                                   virStorageSourcePtr src,
+                                   bool migrated)
+{
+    if (virSecurityDACRestoreImageLabelSingle(mgr, def, src, migrated) < 0)
+        return -1;
+
+    if (src->externalDataStore &&
+        virSecurityDACRestoreImageLabelSingle(mgr,
+                                              def,
+                                              src->externalDataStore,
+                                              migrated) < 0)
+        return -1;
+
+    return 0;
 }
 
 
