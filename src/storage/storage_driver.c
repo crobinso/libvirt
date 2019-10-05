@@ -253,6 +253,7 @@ storageStateInitialize(bool privileged,
 {
     VIR_AUTOFREE(char *) configdir = NULL;
     VIR_AUTOFREE(char *) rundir = NULL;
+    bool autostart = true;
 
     if (VIR_ALLOC(driver) < 0)
         return -1;
@@ -314,7 +315,11 @@ storageStateInitialize(bool privileged,
 
     storagePoolUpdateAllState();
 
-    storageDriverAutostart();
+    if (virDriverShouldAutostart(driver->stateDir, &autostart) < 0)
+        goto error;
+
+    if (autostart)
+        storageDriverAutostart();
 
     driver->storageEventState = virObjectEventStateNew();
 

@@ -655,6 +655,7 @@ libxlStateInitialize(bool privileged,
     libxlDriverConfigPtr cfg;
     char *driverConf = NULL;
     char ebuf[1024];
+    bool autostart = true;
 
     if (!libxlDriverShouldLoad(privileged))
         return 0;
@@ -800,8 +801,13 @@ libxlStateInitialize(bool privileged,
                                        NULL, NULL) < 0)
         goto error;
 
-    virDomainObjListForEach(libxl_driver->domains, libxlAutostartDomain,
-                            libxl_driver);
+    if (virDriverShouldAutostart(cfg->stateDir, &autostart) < 0)
+        goto error;
+
+    if (autostart) {
+        virDomainObjListForEach(libxl_driver->domains, libxlAutostartDomain,
+                                libxl_driver);
+    }
 
     virDomainObjListForEach(libxl_driver->domains, libxlDomainManagedSaveLoad,
                             libxl_driver);
