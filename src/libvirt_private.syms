@@ -2989,7 +2989,6 @@ virStorageFileGetLVMKey;
 virStorageFileGetMetadata;
 virStorageFileGetMetadataFromBuf;
 virStorageFileGetMetadataFromFD;
-virStorageFileGetMetadataInternal;
 virStorageFileGetNPIVKey;
 virStorageFileGetRelativeBackingPath;
 virStorageFileGetSCSIKey;
