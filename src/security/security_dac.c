@@ -882,6 +882,7 @@ virSecurityDACSetImageLabelInternal(virSecurityManagerPtr mgr,
     virSecurityDeviceLabelDefPtr parent_seclabel = NULL;
     virSecurityDACDataPtr priv = virSecurityManagerGetPrivateData(mgr);
     bool remember;
+    bool is_toplevel = parent == src;
     uid_t user;
     gid_t group;
 
@@ -926,7 +927,7 @@ virSecurityDACSetImageLabelInternal(virSecurityManagerPtr mgr,
      * but the top layer, or read only image, or disk explicitly
      * marked as shared.
      */
-    remember = src == parent && !src->readonly && !src->shared;
+    remember = is_toplevel && !src->readonly && !src->shared;
 
     return virSecurityDACSetOwnership(mgr, src, NULL, user, group, remember);
 }
