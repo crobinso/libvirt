@@ -1824,6 +1824,7 @@ virSecuritySELinuxSetImageLabelInternal(virSecurityManagerPtr mgr,
     virSecurityDeviceLabelDefPtr parent_seclabel = NULL;
     char *use_label = NULL;
     bool remember;
+    bool is_toplevel = parent == src;
     int ret;
 
     if (!src->path || !virStorageSourceIsLocalStorage(src))
@@ -1845,7 +1846,7 @@ virSecuritySELinuxSetImageLabelInternal(virSecurityManagerPtr mgr,
      * but the top layer, or read only image, or disk explicitly
      * marked as shared.
      */
-    remember = src == parent && !src->readonly && !src->shared;
+    remember = is_toplevel && !src->readonly && !src->shared;
 
     disk_seclabel = virStorageSourceGetSecurityLabelDef(src,
                                                         SECURITY_SELINUX_NAME);
@@ -1862,7 +1863,7 @@ virSecuritySELinuxSetImageLabelInternal(virSecurityManagerPtr mgr,
             return 0;
 
         use_label = parent_seclabel->label;
-    } else if (parent == src) {
+    } else if (is_toplevel) {
         if (src->shared) {
             use_label = data->file_context;
         } else if (src->readonly) {
