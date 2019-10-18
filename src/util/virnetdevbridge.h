@@ -21,7 +21,8 @@
 #include "internal.h"
 #include "virmacaddr.h"
 
-int virNetDevBridgeCreate(const char *brname)
+int virNetDevBridgeCreate(const char *brname,
+                          const virMacAddr *mac)
     ATTRIBUTE_NONNULL(1) ATTRIBUTE_RETURN_CHECK;
 int virNetDevBridgeDelete(const char *brname)
     ATTRIBUTE_NONNULL(1) ATTRIBUTE_RETURN_CHECK;
