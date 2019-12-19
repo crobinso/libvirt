@@ -25,3 +25,6 @@
 int
 virHostGetBootTime(unsigned long long *when)
     ATTRIBUTE_NOINLINE;
+
+int
+virHostBootTimeInit(void);

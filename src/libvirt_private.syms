@@ -2136,6 +2136,7 @@ virHostMemSetParameters;
 
 
 # util/virhostuptime.h
+virHostBootTimeInit;
 virHostGetBootTime;
 
 
