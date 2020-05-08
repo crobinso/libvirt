@@ -289,7 +289,9 @@ static int
 networkShutdownNetworkExternal(virNetworkObjPtr obj);
 
 static void
-networkReloadFirewallRules(virNetworkDriverStatePtr driver, bool startup);
+networkReloadFirewallRules(virNetworkDriverStatePtr driver,
+                           bool startup,
+                           bool force);
 
 static void
 networkRefreshDaemons(virNetworkDriverStatePtr driver);
@@ -695,7 +697,7 @@ firewalld_dbus_filter_bridge(DBusConnection *connection ATTRIBUTE_UNUSED,
 
     if (reload) {
         VIR_DEBUG("Reload in bridge_driver because of firewalld.");
-        networkReloadFirewallRules(driver, false);
+        networkReloadFirewallRules(driver, false, true);
     }
 
     return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
@@ -814,7 +816,7 @@ networkStateInitialize(bool privileged,
     virNetworkObjListPrune(network_driver->networks,
                            VIR_CONNECT_LIST_NETWORKS_INACTIVE |
                            VIR_CONNECT_LIST_NETWORKS_TRANSIENT);
-    networkReloadFirewallRules(network_driver, true);
+    networkReloadFirewallRules(network_driver, true, false);
     networkRefreshDaemons(network_driver);
 
     if (virDriverShouldAutostart(network_driver->stateDir, &autostart) < 0)
@@ -884,7 +886,7 @@ networkStateReload(void)
                                 network_driver->networkConfigDir,
                                 network_driver->networkAutostartDir,
                                 network_driver->xmlopt);
-    networkReloadFirewallRules(network_driver, false);
+    networkReloadFirewallRules(network_driver, false, false);
     networkRefreshDaemons(network_driver);
     virNetworkObjListForEach(network_driver->networks,
                              networkAutostartConfig,
@@ -2267,14 +2269,16 @@ networkReloadFirewallRulesHelper(virNetworkObjPtr obj,
 
 
 static void
-networkReloadFirewallRules(virNetworkDriverStatePtr driver, bool startup)
+networkReloadFirewallRules(virNetworkDriverStatePtr driver,
+                           bool startup,
+                           bool force)
 {
     VIR_INFO("Reloading iptables rules");
     /* Ideally we'd not even register the driver when unprivilegd
      * but until we untangle the virt driver that's not viable */
     if (!driver->privileged)
         return;
-    networkPreReloadFirewallRules(driver, startup);
+    networkPreReloadFirewallRules(driver, startup, force);
     virNetworkObjListForEach(driver->networks,
                              networkReloadFirewallRulesHelper,
                              NULL);

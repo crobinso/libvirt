@@ -20,7 +20,8 @@
 #include <config.h>
 
 void networkPreReloadFirewallRules(virNetworkDriverStatePtr driver ATTRIBUTE_UNUSED,
-                                   bool startup ATTRIBUTE_UNUSED)
+                                   bool startup ATTRIBUTE_UNUSED,
+                                   bool force ATTRIBUTE_UNUSED)
 {
 }
 
